@@ -13,6 +13,7 @@
 <title>Blackjack Tracker</title>
 <style>
 @font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:swap;src:url(fonts/bigshoulders-800.woff2) format("woff2")}
+@font-face{font-family:"DM Sans";font-weight:100 1000;font-display:swap;src:url(fonts/dmsans.woff2) format("woff2")}
 @font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url(fonts/fraunces-600.woff2) format("woff2")}
 /* Layout: one-screen phone app, single dark theme by choice. Black ground, grey panels,
    one muted gold reserved for the single thing that matters on each screen. */
@@ -29,8 +30,25 @@ html[data-look="felt"]{
   --bg:#0B1D16; --panel:#122B21; --raised:#1D3F31; --line:#1E4033; --line2:#2A5443;
   --text:#F4EFE1; --mid:#D2D6C4; --dim:#9DB3A4; --gold:#E3B95C; --gold2:#A98A45; --good:#8FE0AE; --bad:#F29A84;
   --g1:#24493A; --g2:#3B6552; --g3:#5E8672; --sheet:#0F261D;
-  --num:"Big Shoulders Display","Arial Narrow",var(--font); --numw:800; --numls:0;
+  --num:"Big Shoulders Display","Arial Narrow",-apple-system,sans-serif; --numw:800; --numls:0;
+  --font:"DM Sans",-apple-system,"SF Pro Text",system-ui,sans-serif;
+  --bg:#06140E; --panel:#0E2A20; --raised:#153828; --line:#1C3E30; --line2:#2C5443;
+  --text:#F3EFE2; --dim:#A9BDAE; --gold:#E2B659; --sheet:#0B2219;
 }
+/* Felt: the original A mockup. Brass callouts, uppercase condensed labels, pill buttons */
+html[data-look="felt"] h2{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+html[data-look="felt"] :is(.col,.sp,.panel) > span.s13.dim:first-child,html[data-look="felt"] button.col > span.s15.dim:first-child{font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+html[data-look="felt"] .head .col > .s15.dim{font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+html[data-look="felt"] .btn{border-radius:999px;font-family:var(--num);font-weight:900;font-size:24px;letter-spacing:.04em;text-transform:uppercase;height:62px}
+html[data-look="felt"] .btn.sm{font-family:var(--font);font-weight:700;font-size:15px;letter-spacing:0;text-transform:none;height:44px}
+html[data-look="felt"] .bigbtn{background:transparent;border:2px solid var(--line2);border-radius:22px}
+html[data-look="felt"] .instr.hot{background:var(--gold);border-color:var(--gold);color:#1B1403}
+html[data-look="felt"] .instr.hot .dim,html[data-look="felt"] .instr.hot .mid{color:#1B1403;opacity:.78}
+html[data-look="felt"] .instr.hot .col > span:first-child{font-family:var(--num);font-weight:900;font-size:40px!important;line-height:1;text-transform:uppercase}
+html[data-look="felt"] .instr.hot .btn{background:#1B1403!important;color:var(--text)!important}
+html[data-look="felt"] .live-num{font-weight:900}
+html[data-look="felt"] .panel,html[data-look="felt"] .rows{border-radius:22px}
+html[data-look="felt"] .seg{border-radius:999px} html[data-look="felt"] .seg .thumb,html[data-look="felt"] .seg button{border-radius:999px}
 html[data-look="claret"]{
   --bg:#1C0B10; --panel:#2A131A; --raised:#3D1E27; --line:#3A1C25; --line2:#4E2732;
   --text:#F6ECE4; --mid:#DCCDC6; --dim:#B79AA0; --gold:#E7B777; --gold2:#A9824F; --good:#9BD9B4; --bad:#FF9D8A;
@@ -453,7 +471,7 @@ function drawSheet(){var s=ui.sheet,b=document.querySelector("#sheet .body"),h='
     +'<div class="rowi"><span>Monthly budget</span><div class="step"><button class="press" data-a="setStep" data-k="budget" data-d="-1" aria-label="Less">−</button><b>'+(st.budget?money(st.budget):"Off")+'</b><button class="press" data-a="setStep" data-k="budget" data-d="1" aria-label="More">+</button></div></div>'
     +'<div class="rowi"><span>Cool-off between sessions</span>'+seg("cool",[[0,"Off"],[12,"12h"],[24,"24h"],[48,"48h"]],st.cooloffH)+'</div></div>'
     +'<button class="btn soft press" style="background:var(--bg)" data-a="backup">'+(s.copied?"Copied to clipboard":"Copy a backup of my data")+'</button>'
-    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 5<br>'+diag()+'</p>';
+    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 6<br>'+diag()+'</p>';
   b.innerHTML=h;placeThumbs(b);endRes();}
 function endRes(){var el=document.getElementById("sh-res"),l=L();if(!el||!l)return;var n=num(document.getElementById("sh-cash").value,0)-l.buyIn-rebuys(l);el.textContent=(n===0?"Break even":money(n,true))+" on the night";}
 document.addEventListener("input",function(ev){if(ev.target.id==="sh-cash")endRes();});
