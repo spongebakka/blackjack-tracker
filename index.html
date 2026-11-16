@@ -38,9 +38,11 @@ html[data-look="claret"]{
   --num:"Fraunces",Georgia,serif; --numw:600; --numls:-.02em;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;overscroll-behavior:none}
+html,body{height:100%;overflow:hidden;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;overscroll-behavior:none}
 body{-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
-#app{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+#app{position:fixed;top:0;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
+/* covers the status bar so scrolled content never runs under the clock */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;pointer-events:none}
 .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 22px) 20px 28px;display:flex;flex-direction:column;gap:14px}
 .screen.enter{animation:enter .34s var(--ease)}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
