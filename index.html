@@ -12,14 +12,30 @@
 <link rel="icon" href="icon-192.png">
 <title>Blackjack Tracker</title>
 <style>
+@font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:swap;src:url(fonts/bigshoulders-800.woff2) format("woff2")}
+@font-face{font-family:"Fraunces";font-weight:600;font-display:swap;src:url(fonts/fraunces-600.woff2) format("woff2")}
 /* Layout: one-screen phone app, single dark theme by choice. Black ground, grey panels,
    one muted gold reserved for the single thing that matters on each screen. */
 :root{
   --bg:#0A0A0B; --panel:#151517; --raised:#222226; --line:#26262A;
   --text:#F2F2F3; --mid:#C9C9CE; --dim:#9A9AA2; --gold:#D9B26A; --good:#7FD6A4; --bad:#F0897B;
+  --line2:#2E2E33; --g1:#3A3A40; --g2:#55555C; --g3:#6B6B73; --gold2:#A88A52; --sheet:#19191C;
+  --num:var(--font); --numw:700; --numls:-.03em;
   --font:-apple-system,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
   --ease:cubic-bezier(.2,.8,.2,1);
   color-scheme:dark;
+}
+html[data-look="felt"]{
+  --bg:#0B1D16; --panel:#122B21; --raised:#1D3F31; --line:#1E4033; --line2:#2A5443;
+  --text:#F4EFE1; --mid:#D2D6C4; --dim:#9DB3A4; --gold:#E3B95C; --gold2:#A98A45; --good:#8FE0AE; --bad:#F29A84;
+  --g1:#24493A; --g2:#3B6552; --g3:#5E8672; --sheet:#0F261D;
+  --num:"Big Shoulders Display","Arial Narrow",var(--font); --numw:800; --numls:0;
+}
+html[data-look="claret"]{
+  --bg:#1C0B10; --panel:#2A131A; --raised:#3D1E27; --line:#3A1C25; --line2:#4E2732;
+  --text:#F6ECE4; --mid:#DCCDC6; --dim:#B79AA0; --gold:#E7B777; --gold2:#A9824F; --good:#9BD9B4; --bad:#FF9D8A;
+  --g1:#45222C; --g2:#63323F; --g3:#8A5562; --sheet:#241017;
+  --num:"Fraunces",Georgia,serif; --numw:600; --numls:-.02em;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;overscroll-behavior:none}
@@ -29,6 +45,13 @@ body{-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:non
 .screen.enter{animation:enter .34s var(--ease)}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.02em}
+.big,.med,.live-num,h1,.bigbtn,input.hero{font-family:var(--num);font-weight:var(--numw);letter-spacing:var(--numls)}
+html[data-look="felt"] h1{font-size:38px;text-transform:uppercase;line-height:1}
+html[data-look="felt"] .big{font-size:50px} html[data-look="felt"] .med{font-size:32px;line-height:1.05}
+html[data-look="felt"] .live-num{font-size:min(46vw,190px);line-height:.95} html[data-look="felt"] .bigbtn{font-size:30px}
+html[data-look="felt"] input.hero{font-size:60px}
+html[data-look="claret"] h1{font-size:34px} html[data-look="claret"] .big{font-size:42px} html[data-look="claret"] .med{font-size:27px}
+html[data-look="felt"] .btn:not(.soft):not(.gold):not(.sm),html[data-look="claret"] .btn:not(.soft):not(.gold):not(.sm){background:var(--gold);color:var(--bg)}
 h2{margin:0;font-size:15px;font-weight:600}
 .dim{color:var(--dim)} .mid{color:var(--mid)} .gold{color:var(--gold)} .pos{color:var(--good)} .neg{color:var(--text)}
 .s13{font-size:13px} .s15{font-size:15px} .s17{font-size:17px}
@@ -40,8 +63,8 @@ h2{margin:0;font-size:15px;font-weight:600}
 .sp{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .col{display:flex;flex-direction:column;gap:2px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.big{font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
-.med{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.big{font-size:38px;line-height:1.05}
+.med{font-size:24px}
 .grow{flex:1}
 button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
 .press{transition:transform .5s var(--ease),opacity .2s,background .2s}
@@ -82,7 +105,7 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cu
 .dots{display:flex;gap:6px}
 .dots i{width:12px;height:12px;border-radius:50%;background:var(--raised)} .dots i.on{background:var(--gold)}
 /* live */
-.live-num{font-size:min(31vw,128px);font-weight:700;letter-spacing:-.05em;line-height:1}
+.live-num{font-size:min(31vw,128px);line-height:1}
 .instr{border-radius:20px;background:var(--panel);padding:16px;min-height:80px;display:flex;flex-direction:column;gap:12px;justify-content:center;border:1px solid transparent;transition:border-color .3s}
 .instr.hot{border-color:var(--gold)}
 .instr.swap{animation:enter .3s var(--ease)}
@@ -91,12 +114,12 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cu
 /* sheets */
 #sheet{position:fixed;inset:0;z-index:10;pointer-events:none}
 #sheet .back{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:opacity .3s}
-#sheet .body{position:absolute;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;max-height:92%;overflow-y:auto;background:#19191C;border-radius:28px 28px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:14px;transform:translateY(102%);transition:transform .42s var(--ease)}
+#sheet .body{position:absolute;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;max-height:92%;overflow-y:auto;background:var(--sheet);border-radius:28px 28px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:14px;transform:translateY(102%);transition:transform .42s var(--ease)}
 #sheet.open{pointer-events:auto} #sheet.open .back{opacity:1} #sheet.open .body{transform:none}
 #sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--raised);margin:0 auto 6px;flex:none}
 #sheet .rows,#sheet .panel{background:var(--bg)}
 input,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;user-select:text;-webkit-user-select:text}
-input.hero{font-size:44px;font-weight:700;letter-spacing:-.03em;text-align:center;border:0;background:none;padding:6px 0}
+input.hero{font-size:44px;text-align:center;border:0;background:none;padding:6px 0}
 textarea{min-height:96px;resize:none;line-height:1.4}
 label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--dim)}
 .badge{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -119,7 +142,7 @@ var RATE={solo:200,few:110,full:65};
 var TABLE={solo:"Just me",few:"2–3 players",full:"4 or more",mixed:"Mixed"};
 var MOOD={1:"Rough",2:"Fine",3:"Good"};
 var EXIT=["Stack gone","Locked a win","Tired","Had enough","Chasing","Other"];
-var DEF={cur:"$",budget:0,cooloffH:24,checkinMin:60,buyIn:100,bet:5,lockAt:200,keep:100,note:"The buy-in is the ticket price. When it's gone, the night was still a good one. Go home."};
+var DEF={cur:"$",budget:0,cooloffH:24,checkinMin:60,buyIn:100,bet:5,lockAt:200,keep:100,look:"felt",note:"The buy-in is the ticket price. When it's gone, the night was still a good one. Go home."};
 function seed(){return {v:1,updatedAt:1,settings:clone(DEF),live:null,sessions:SEED.map(function(n,i){var last=i===SEED.length-1;
   return {id:"v"+(i+1),ts:i+1,date:last?"2026-11-15":null,net:n,bet:10,hands:last?550:225,minutes:last?270:null,kept:null,legacy:true};})};}
 var state=seed(), db=null, pushTimer=null, writing=false, writeNext=false;
@@ -145,6 +168,8 @@ function connect(){if(!(window.claude&&window.claude.use))return;
 
 /* ================= helpers ================= */
 function S(){return state.settings;}
+var LOOKS={quiet:"#0A0A0B",felt:"#0B1D16",claret:"#1C0B10"};
+function applyLook(){var k=LOOKS[S().look]?S().look:"felt";document.documentElement.setAttribute("data-look",k);var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",LOOKS[k]);}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function num(v,d){var n=parseFloat(v);return isFinite(n)?n:d;}
 function money(n,sign){var a=Math.abs(n),s=(Math.round(a*100)%100)?a.toFixed(2):Math.round(a).toLocaleString("en");return (n<0?"−":(sign&&n>0?"+":""))+S().cur+s;}
@@ -180,9 +205,9 @@ var IC={
   gear:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
   plus:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   back:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
-  ok:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9B26A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
-  okd:'<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
-  no:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0897B" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+  ok:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  okd:'<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  no:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--bad)" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
 };
 function seg(act,opts,val,cls){return '<div class="seg '+(cls||"")+'" data-seg><div class="thumb"></div>'+opts.map(function(o){return '<button class="press" data-a="'+act+'" data-v="'+esc(o[0])+'" aria-pressed="'+(String(o[0])===String(val))+'">'+esc(o[1])+'</button>';}).join("")+'</div>';}
 function placeThumbs(root){(root||document).querySelectorAll("[data-seg]").forEach(function(s){var b=s.querySelector('[aria-pressed="true"]'),t=s.querySelector(".thumb");if(!b){t.style.width="0";return;}t.style.left=b.offsetLeft+"px";t.style.width=b.offsetWidth+"px";});}
@@ -193,21 +218,21 @@ function lineChart(id,ys,labels,o){o=o||{};var W=350,H=o.h||130,p=8,all=ys.conca
   function x(i){return n>1?i/(n-1)*W:W/2;}function y(v){return p+(H-2*p)*(hi-v)/(hi-lo);}
   charts[id]={ys:ys,labels:labels,n:n,yp:function(i){return y(ys[i])/H*100;}};
   var pts=ys.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" "),band="",exp="";
-  if(o.band){band='<polygon fill="#F2F2F3" opacity=".07" points="'+o.band.hi.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ")+" "+o.band.lo.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).reverse().join(" ")+'"/>';
-    exp='<polyline fill="none" stroke="#9A9AA2" stroke-width="1.5" stroke-dasharray="4 4" points="'+o.band.mid.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ")+'"/>';}
+  if(o.band){band='<polygon fill="var(--text)" opacity=".07" points="'+o.band.hi.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ")+" "+o.band.lo.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).reverse().join(" ")+'"/>';
+    exp='<polyline fill="none" stroke="var(--dim)" stroke-width="1.5" stroke-dasharray="4 4" points="'+o.band.mid.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ")+'"/>';}
   return '<div class="chart" data-chart="'+id+'"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.aria||"Chart")+'">'
-    +'<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#2E2E33" stroke-width="1"/>'+band+exp
-    +'<polyline fill="none" stroke="#F2F2F3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+pts+'"/>'
-    +'<circle cx="'+x(n-1).toFixed(1)+'" cy="'+y(ys[n-1]).toFixed(1)+'" r="4" fill="#D9B26A"/></svg>'
+    +'<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="var(--line2)" stroke-width="1"/>'+band+exp
+    +'<polyline fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+pts+'"/>'
+    +'<circle cx="'+x(n-1).toFixed(1)+'" cy="'+y(ys[n-1]).toFixed(1)+'" r="4" fill="var(--gold)"/></svg>'
     +'<div class="cur" hidden></div><div class="dot" hidden></div></div>'
     +'<div class="sp s13 dim" data-tip="'+id+'"><span>'+esc(o.left||"")+'</span><span>'+esc(o.right||"Drag across to inspect")+'</span></div>';}
 function barChart(id,ys,labels,sd){var W=350,H=140,p=8,all=ys.concat([0,sd,-sd]),lo=Math.min.apply(null,all),hi=Math.max.apply(null,all),n=ys.length,bw=W/n;
   function y(v){return p+(H-2*p)*(hi-v)/(hi-lo);}
   charts[id]={ys:ys,labels:labels,n:n,bar:true,yp:function(i){return y(ys[i])/H*100;}};
-  var out=ys.map(function(v,i){var a=y(0),b=y(v);return '<rect x="'+(i*bw+bw*.18).toFixed(1)+'" y="'+Math.min(a,b).toFixed(1)+'" width="'+(bw*.64).toFixed(1)+'" height="'+Math.max(1.5,Math.abs(b-a)).toFixed(1)+'" rx="2" fill="'+(v>=0?"#7FD6A4":Math.abs(v)>sd?"#D9B26A":"#6B6B73")+'"/>';}).join("");
+  var out=ys.map(function(v,i){var a=y(0),b=y(v);return '<rect x="'+(i*bw+bw*.18).toFixed(1)+'" y="'+Math.min(a,b).toFixed(1)+'" width="'+(bw*.64).toFixed(1)+'" height="'+Math.max(1.5,Math.abs(b-a)).toFixed(1)+'" rx="2" fill="'+(v>=0?"var(--good)":Math.abs(v)>sd?"var(--gold)":"var(--g3)")+'"/>';}).join("");
   return '<div class="chart" data-chart="'+id+'"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Luck on each night">'
-    +'<rect x="0" width="'+W+'" y="'+y(sd).toFixed(1)+'" height="'+(y(-sd)-y(sd)).toFixed(1)+'" fill="#F2F2F3" opacity=".05" rx="4"/>'+out
-    +'<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#55555C" stroke-width="1"/></svg><div class="cur" hidden></div><div class="dot" hidden></div></div>'
+    +'<rect x="0" width="'+W+'" y="'+y(sd).toFixed(1)+'" height="'+(y(-sd)-y(sd)).toFixed(1)+'" fill="var(--text)" opacity=".05" rx="4"/>'+out
+    +'<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="var(--g2)" stroke-width="1"/></svg><div class="cur" hidden></div><div class="dot" hidden></div></div>'
     +'<div class="sp s13 dim" data-tip="'+id+'"><span>Shaded: an ordinary night</span><span>Drag to inspect</span></div>';}
 function scrub(ev){var c=ev.target.closest&&ev.target.closest(".chart");if(!c)return;var d=charts[c.dataset.chart];if(!d)return;
   var r=c.getBoundingClientRect(),f=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),i=d.bar?Math.min(d.n-1,Math.floor(f*d.n)):Math.round(f*(d.n-1));
@@ -219,17 +244,17 @@ function bell(z){var x=Math.max(8,Math.min(292,150+z*45)),bad=z<0,yy=6+64*(1-Mat
   var tail="M"+(bad?0:300)+",70";for(i=bad?0:300;bad?i<=x:i>=x;i+=bad?4:-4)tail+=" L"+i+","+(6+64*(1-Math.exp(-Math.pow((i-150)/45,2)/2))).toFixed(1);
   tail+=" L"+x.toFixed(1)+","+yy.toFixed(1)+" L"+x.toFixed(1)+",70 Z";
   return '<svg viewBox="0 0 300 74" role="img" aria-label="Where this result sits among possible results" style="display:block;width:100%;height:auto">'
-    +'<path d="'+tail+'" fill="#D9B26A" opacity=".3"/><path d="'+d+'" fill="none" stroke="#6B6B73" stroke-width="2"/>'
-    +'<line x1="'+x+'" x2="'+x+'" y1="10" y2="70" stroke="#D9B26A" stroke-width="2"/><circle cx="'+x+'" cy="'+yy.toFixed(1)+'" r="4" fill="#D9B26A"/>'
-    +'<line x1="0" x2="300" y1="70" y2="70" stroke="#2E2E33"/></svg><div class="sp s13 dim"><span>Unlucky</span><span>Typical</span><span>Lucky</span></div>';}
+    +'<path d="'+tail+'" fill="var(--gold)" opacity=".3"/><path d="'+d+'" fill="none" stroke="var(--g3)" stroke-width="2"/>'
+    +'<line x1="'+x+'" x2="'+x+'" y1="10" y2="70" stroke="var(--gold)" stroke-width="2"/><circle cx="'+x+'" cy="'+yy.toFixed(1)+'" r="4" fill="var(--gold)"/>'
+    +'<line x1="0" x2="300" y1="70" y2="70" stroke="var(--line2)"/></svg><div class="sp s13 dim"><span>Unlucky</span><span>Typical</span><span>Lucky</span></div>';}
 function histogram(nets){var w=50,lo=Math.floor(Math.min.apply(null,nets)/w),hi=Math.floor(Math.max.apply(null,nets)/w),bins=[],i,mx=1;
   for(i=lo;i<=hi;i++)bins.push(0);nets.forEach(function(n){bins[Math.floor(n/w)-lo]++;});mx=Math.max.apply(null,bins);
   var W=350,H=110,bw=W/bins.length,out="";
-  bins.forEach(function(c,k){var h=c/mx*(H-22),neg=(k+lo)<0;if(c)out+='<rect x="'+(k*bw+2).toFixed(1)+'" y="'+(H-18-h).toFixed(1)+'" width="'+(bw-4).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="3" fill="'+(neg?"#55555C":"#7FD6A4")+'"/><text x="'+(k*bw+bw/2).toFixed(1)+'" y="'+(H-22-h).toFixed(1)+'" font-size="10" fill="#9A9AA2" text-anchor="middle">'+c+'</text>';});
+  bins.forEach(function(c,k){var h=c/mx*(H-22),neg=(k+lo)<0;if(c)out+='<rect x="'+(k*bw+2).toFixed(1)+'" y="'+(H-18-h).toFixed(1)+'" width="'+(bw-4).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="3" fill="'+(neg?"var(--g2)":"var(--good)")+'"/><text x="'+(k*bw+bw/2).toFixed(1)+'" y="'+(H-22-h).toFixed(1)+'" font-size="10" fill="var(--dim)" text-anchor="middle">'+c+'</text>';});
   var zx=(0-lo)*bw;
   return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="How often each size of result happened" style="display:block;width:100%;height:auto">'+out
-   +'<line x1="0" x2="'+W+'" y1="'+(H-18)+'" y2="'+(H-18)+'" stroke="#2E2E33"/>'
-   +'<g font-size="11" fill="#9A9AA2"><text x="0" y="'+(H-4)+'">'+money(lo*w)+'</text><text x="'+zx.toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+money(0)+'</text><text x="'+W+'" y="'+(H-4)+'" text-anchor="end">'+money((hi+1)*w,true)+'</text></g></svg>';}
+   +'<line x1="0" x2="'+W+'" y1="'+(H-18)+'" y2="'+(H-18)+'" stroke="var(--line2)"/>'
+   +'<g font-size="11" fill="var(--dim)"><text x="0" y="'+(H-4)+'">'+money(lo*w)+'</text><text x="'+zx.toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+money(0)+'</text><text x="'+W+'" y="'+(H-4)+'" text-anchor="end">'+money((hi+1)*w,true)+'</text></g></svg>';}
 
 /* ================= simulator ================= */
 function draw(){var r=Math.random();return r<.05?-2:r<.474?-1:r<.559?0:r<.9?1:r<.945?1.5:2;}
@@ -268,7 +293,7 @@ function vPlan(){var st=S(),r=sim(),b=blocks(),pocket=st.lockAt-st.keep;
    +'<div class="rowi"><span>Then play on with</span>'+stp("keep",money(st.keep))+'</div>'
    +'<div class="rowi"><span>Check in every</span>'+stp("checkinMin",st.checkinMin+"m")+'</div></div>'
    +'<div class="panel"><div class="sp"><h2>100 nights with this plan</h2><span class="s13 dim">'+Math.floor(st.buyIn/st.bet)+' bets deep</span></div>'
-   +'<div style="display:flex;gap:3px;height:26px"><div style="width:'+pl+'%;background:#3A3A40;border-radius:6px 2px 2px 6px"></div>'+(po?'<div style="width:'+po+'%;background:#55555C;border-radius:2px"></div>':"")+'<div style="width:'+ps+'%;background:#A88A52;border-radius:2px"></div><div style="flex:1;background:var(--gold);border-radius:2px 6px 6px 2px"></div></div>'
+   +'<div style="display:flex;gap:3px;height:26px"><div style="width:'+pl+'%;background:var(--g1);border-radius:6px 2px 2px 6px"></div>'+(po?'<div style="width:'+po+'%;background:var(--g2);border-radius:2px"></div>':"")+'<div style="width:'+ps+'%;background:var(--gold2);border-radius:2px"></div><div style="flex:1;background:var(--gold);border-radius:2px 6px 6px 2px"></div></div>'
    +'<div class="sp s13"><span class="col"><b>'+pl+' nights</b><span class="dim">lose the buy-in</span></span>'+(po>3?'<span class="col"><b>'+po+'</b><span class="dim">small loss</span></span>':"")+'<span class="col"><b>'+ps+' nights</b><span class="dim">win up to '+money(st.buyIn)+'</span></span><span class="col" style="align-items:flex-end"><b>'+pb+' nights</b><span class="dim">win more</span></span></div>'
    +'<p class="s13 dim">A typical night lasts about '+r.medH+' hands. No night can lose more than '+money(st.buyIn)+'.'+(st.buyIn/st.bet<15?" Under 15 bets is thin: the stack often goes in half an hour.":"")+'</p></div>'
    +'<button class="panel press" data-a="note" style="text-align:left;gap:6px"><span class="s13 dim">Note to self · tap to edit</span><span class="s17" style="line-height:1.4">'+esc(st.note)+'</span></button>'
@@ -368,18 +393,18 @@ function vStats(){var all=sorted(),list=scope();
    +tile("Average night",money(Math.round(tot/list.length),true),"per session")+tile("Biggest swing",money(Math.max.apply(null,nets.concat(0)),true),"worst "+money(Math.min.apply(null,nets.concat(0))))+'</div>'
    +(function(){var lk=tot-m,ed=Math.abs(m),tw=ed+Math.abs(lk)||1,p=phi(z),chance=z<0?p:1-p;
       return '<div class="panel"><div class="sp"><h2>Luck and the house edge</h2><span class="s13 dim">'+withEv+' of '+list.length+' sessions</span></div>'
-      +'<div style="display:flex;gap:3px;height:26px"><div style="width:'+(ed/tw*100)+'%;background:#55555C;border-radius:6px 2px 2px 6px"></div><div style="flex:1;background:'+(lk<0?"var(--gold)":"var(--good)")+';border-radius:2px 6px 6px 2px"></div></div>'
+      +'<div style="display:flex;gap:3px;height:26px"><div style="width:'+(ed/tw*100)+'%;background:var(--g2);border-radius:6px 2px 2px 6px"></div><div style="flex:1;background:'+(lk<0?"var(--gold)":"var(--good)")+';border-radius:2px 6px 6px 2px"></div></div>'
       +'<div class="sp s13"><span class="col"><b style="font-size:17px">'+money(Math.round(m))+'</b><span class="dim">the price of playing</span></span><span class="col" style="align-items:flex-end"><b style="font-size:17px" class="'+(lk<0?"gold":"pos")+'">'+money(Math.round(lk),true)+'</b><span class="dim">'+(lk<0?"bad luck so far":"good luck so far")+'</span></span></div>'
       +'<p class="s15 mid">Over this much play, a run this '+(z<0?"unlucky":"lucky")+' or more happens about '+oneIn(chance)+' times. That is '+verdict+'.</p>'
       +'<h2 style="padding-top:6px">Luck, night by night</h2>'+barChart("luck",dev,labels.slice(1),avgSd)
       +'<p class="s13 dim">Each bar is that night\'s result minus what the edge predicted. Gold bars are nights well outside ordinary luck.</p>'
       +(list.some(function(s){return s.legacy&&!s.minutes;})?'<p class="s13 dim">Hands for earlier visits are assumed at 225 a night on '+money(10)+' bets.</p>':"")+'</div>';})()
    +'<div class="panel"><h2>Size of wins and losses</h2>'
-   +'<div style="display:grid;grid-template-columns:74px 1fr auto;gap:8px 10px;align-items:center" class="s15"><span class="dim">Avg win</span><div class="hbar" style="background:var(--good);width:'+(aw/mx*100)+'%"></div><b class="pos">'+money(Math.round(aw),true)+'</b><span class="dim">Avg loss</span><div class="hbar" style="background:#6B6B73;width:'+(-al/mx*100)+'%"></div><b>'+money(Math.round(al))+'</b></div>'
+   +'<div style="display:grid;grid-template-columns:74px 1fr auto;gap:8px 10px;align-items:center" class="s15"><span class="dim">Avg win</span><div class="hbar" style="background:var(--good);width:'+(aw/mx*100)+'%"></div><b class="pos">'+money(Math.round(aw),true)+'</b><span class="dim">Avg loss</span><div class="hbar" style="background:var(--g3);width:'+(-al/mx*100)+'%"></div><b>'+money(Math.round(al))+'</b></div>'
    +(aw>0&&al<0?'<p class="s13 dim">'+(-al/aw>=1.3?"Losses run "+(-al/aw).toFixed(1)+"× the size of wins. That is the shape one buy-in is meant to fix.":-al/aw<=0.8?"Wins now run bigger than losses.":"Wins and losses are close in size.")+'</p>':"")+'</div>'
    +'<div class="panel"><div class="sp"><h2>How results spread</h2><span class="s13 dim">'+money(50)+' steps</span></div>'+histogram(nets)+'</div>'
    +'<div class="panel"><h2>Break it down</h2>'+seg("by",Object.keys(BY).map(function(k){return [k,BY[k].t];}),ui.by,"on-panel")
-   +(gk.length?gk.map(function(k){var a=sum(groups[k])/groups[k].length;return '<div class="col" style="gap:6px"><div class="sp s15"><span>'+esc(k)+' <span class="dim s13">'+groups[k].length+(groups[k].length===1?" night":" nights")+'</span></span><b class="'+tone(a)+'">'+money(Math.round(a),true)+' avg</b></div><div class="hbar" style="background:'+(a>=0?"var(--good)":"#6B6B73")+';width:'+Math.max(2,Math.abs(a)/gmx*100)+'%"></div></div>';}).join("")+'<p class="s13 dim">'+have+' of '+list.length+' sessions have this detail.</p>'
+   +(gk.length?gk.map(function(k){var a=sum(groups[k])/groups[k].length;return '<div class="col" style="gap:6px"><div class="sp s15"><span>'+esc(k)+' <span class="dim s13">'+groups[k].length+(groups[k].length===1?" night":" nights")+'</span></span><b class="'+tone(a)+'">'+money(Math.round(a),true)+' avg</b></div><div class="hbar" style="background:'+(a>=0?"var(--good)":"var(--g3)")+';width:'+Math.max(2,Math.abs(a)/gmx*100)+'%"></div></div>';}).join("")+'<p class="s13 dim">'+have+' of '+list.length+' sessions have this detail.</p>'
      :'<p class="s15 dim">No sessions in this view have that detail yet. It fills in as you log sessions in the app.</p>')+'</div>'
    +'<div class="panel"><h2>Discipline</h2>'+(tr.length?'<div class="grid2">'+mini("Rules kept",kept+" of "+tr.length)+mini("Current streak",streak(list)+"")+mini("Best streak",best+"")+mini("Slips most on",worstRule||"Nothing")+'</div>':'<p class="s15 dim">Starts counting with the first session you run in the app.</p>')+'</div>'
    +(old.length&&nw.length?'<div class="panel"><h2>Before the rules, and since</h2><div style="display:grid;grid-template-columns:1fr auto auto;gap:10px 18px" class="s15"><span></span><span class="dim s13">Before</span><span class="dim s13">Since</span>'
@@ -397,7 +422,7 @@ function milestones(all){var nw=all.filter(function(s){return !s.legacy;}),tr=nw
   return '<div class="panel" style="gap:4px"><div class="sp"><h2>Milestones</h2><span class="s13 dim">'+got+' of '+M.length+'</span></div>'+M.map(function(x){return '<div class="badge '+(x[1]?"on":"off")+'"><i>'+(x[1]?IC.okd:"")+'</i><span class="s15">'+x[0]+'</span></div>';}).join("")+'</div>';}
 
 /* ================= render ================= */
-function render(force){var root=document.getElementById("root"),key,html,tabs=false;
+function render(force){applyLook();var root=document.getElementById("root"),key,html,tabs=false;
   if(state.live&&ui.flow==="live"){key="live";html=vLive();}
   else if(ui.flow==="plan"){key="plan";html=vPlan();}
   else if(ui.flow==="review"){key="review:"+ui.reviewId;html=vReview();}
@@ -422,7 +447,7 @@ function drawSheet(){var s=ui.sheet,b=document.querySelector("#sheet .body"),h='
     +'<div class="grid2"><label class="f">Date<input id="q-date" type="date" value="'+esc(e.date)+'"></label><label class="f">Minutes played<input id="q-min" type="number" inputmode="numeric" min="0" value="'+esc(e.minutes)+'"></label><label class="f">Bet per hand<input id="q-bet" type="number" inputmode="decimal" min="0" step="any" value="'+esc(e.bet)+'"></label><label class="f">Buy-ins used<input id="q-buys" type="number" inputmode="numeric" min="1" value="'+esc(e.buys)+'"></label></div>'
     +'<div class="col" style="gap:8px"><span class="s13 dim">Table</span>'+seg("qTable",[["solo","Just me"],["few","2–3"],["full","4+"],["mixed","Mixed"]],e.table,"tall on-panel")+'</div>'
     +'<button class="btn press" data-a="saveQuick">Save</button>'+(e.id?(s.confirm?'<button class="btn press" style="background:var(--bad)" data-a="delYes">Delete for good</button>':'<button class="txt press" data-a="delAsk">Delete this session</button>'):"");}
-  else if(s.type==="settings")h+='<h1 style="font-size:22px">Settings</h1><div class="rows"><div class="rowi"><span>Currency</span>'+seg("cur",[["$","$"],["£","£"],["€","€"]],st.cur)+'</div>'
+  else if(s.type==="settings")h+='<h1 style="font-size:22px">Settings</h1><div class="rows"><div class="rowi"><span>Look</span>'+seg("look",[["felt","Felt"],["claret","Claret"],["quiet","Quiet"]],LOOKS[st.look]?st.look:"felt")+'</div><div class="rowi"><span>Currency</span>'+seg("cur",[["$","$"],["£","£"],["€","€"]],st.cur)+'</div>'
     +'<div class="rowi"><span>Monthly budget</span><div class="step"><button class="press" data-a="setStep" data-k="budget" data-d="-1" aria-label="Less">−</button><b>'+(st.budget?money(st.budget):"Off")+'</b><button class="press" data-a="setStep" data-k="budget" data-d="1" aria-label="More">+</button></div></div>'
     +'<div class="rowi"><span>Cool-off between sessions</span>'+seg("cool",[[0,"Off"],[12,"12h"],[24,"24h"],[48,"48h"]],st.cooloffH)+'</div></div>'
     +'<button class="btn soft press" style="background:var(--bg)" data-a="backup">'+(s.copied?"Copied to clipboard":"Copy a backup of my data")+'</button>'
@@ -484,6 +509,7 @@ var ACT={
   delAsk:function(){readQuick();ui.sheet.confirm=true;drawSheet();return 1;},
   delYes:function(){var id=ui.sheet.s.id;state.sessions=state.sessions.filter(function(x){return x.id!==id;});ui.flow=null;save();closeSheet();},
   /* settings */
+  look:function(b){S().look=b.dataset.v;applyLook();save();drawSheet();},
   cur:function(b){S().cur=b.dataset.v;save();drawSheet();},cool:function(b){S().cooloffH=+b.dataset.v;save();drawSheet();},
   setStep:function(b){S().budget=Math.max(0,S().budget+(+b.dataset.d)*50);save();drawSheet();},
   backup:function(){var t=JSON.stringify(state);try{navigator.clipboard.writeText(t).then(function(){ui.sheet.copied=true;drawSheet();},function(){});}catch(e){}return 1;},
