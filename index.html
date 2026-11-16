@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blackjack">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Blackjack Tracker</title>
+<style>
+/* Layout: one-screen phone app, single dark theme by choice. Black ground, grey panels,
+   one muted gold reserved for the single thing that matters on each screen. */
+:root{
+  --bg:#0A0A0B; --panel:#151517; --raised:#222226; --line:#26262A;
+  --text:#F2F2F3; --mid:#C9C9CE; --dim:#9A9AA2; --gold:#D9B26A; --good:#7FD6A4; --bad:#F0897B;
+  --font:-apple-system,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+#app{height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column;position:relative}
+.screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 22px) 20px 28px;display:flex;flex-direction:column;gap:14px}
+.screen.enter{animation:enter .34s var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.02em}
+h2{margin:0;font-size:15px;font-weight:600}
+.dim{color:var(--dim)} .mid{color:var(--mid)} .gold{color:var(--gold)} .pos{color:var(--good)} .neg{color:var(--text)}
+.s13{font-size:13px} .s15{font-size:15px} .s17{font-size:17px}
+.head{display:flex;justify-content:space-between;align-items:center;padding:0 4px}
+.panel{background:var(--panel);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.rows{background:var(--panel);border-radius:20px;padding:2px 16px;display:flex;flex-direction:column}
+.rowi{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:16px;min-height:52px}
+.rowi:last-child{border-bottom:0}
+.sp{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.col{display:flex;flex-direction:column;gap:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.big{font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.med{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.grow{flex:1}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cursor:pointer;touch-action:manipulation}
+.press{transition:transform .5s var(--ease),opacity .2s,background .2s}
+.press:active{transform:scale(.96);transition:transform .08s}
+.btn{height:54px;border-radius:16px;background:var(--text);color:var(--bg);font-size:17px;font-weight:600;width:100%;flex:none}
+.btn.gold{background:var(--gold)} .btn.soft{background:var(--panel);color:var(--text)} .btn.sm{height:44px;width:auto;padding:0 18px;border-radius:12px;font-size:16px}
+.btn:disabled{opacity:.4}
+.txt{height:44px;font-size:16px;color:var(--dim)} .txt.on{color:var(--text);font-weight:600}
+.icon{width:40px;height:40px;border-radius:20px;background:var(--panel);display:grid;place-items:center}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.seg{display:flex;background:var(--panel);border-radius:12px;padding:3px;position:relative}
+.seg.on-panel{background:var(--bg)}
+.seg button{flex:1;height:34px;padding:0 12px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);position:relative;z-index:1;transition:color .2s;white-space:nowrap}
+.seg button[aria-pressed="true"]{color:var(--text);font-weight:600}
+.seg .thumb{position:absolute;top:3px;bottom:3px;border-radius:9px;background:var(--raised);transition:left .32s var(--ease),width .32s var(--ease)}
+.seg.tall button{height:44px;font-size:15px}
+.step{display:flex;align-items:center;gap:12px}
+.step b{min-width:64px;text-align:right;font-weight:600;font-size:17px}
+.step button{width:34px;height:34px;border-radius:17px;background:var(--raised);font-size:20px;line-height:1;display:grid;place-items:center}
+.tabbar{display:flex;justify-content:space-around;padding:8px 0 calc(env(safe-area-inset-bottom,0px) + 10px);border-top:1px solid var(--line);background:var(--bg);flex:none}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--dim);width:84px;height:46px;justify-content:center}
+.tabbar button[aria-current="page"]{color:var(--text)}
+.cta{padding:10px 20px 12px;flex:none}
+/* hold button */
+.hold{position:relative;overflow:hidden;-webkit-touch-callout:none}
+.hold i,.hold span{pointer-events:none}
+.hold i{position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .18s}
+.hold.holding i{transform:scaleX(1);transition:transform .9s linear}
+.hold span{position:relative}
+/* charts */
+.chart{position:relative;touch-action:pan-y}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .cur{position:absolute;top:0;bottom:0;width:1px;background:var(--dim);pointer-events:none}
+.chart .dot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 3px var(--panel);pointer-events:none}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--gold);transition:width .5s var(--ease)}
+.hbar{height:8px;border-radius:4px;transition:width .5s var(--ease)}
+.dots{display:flex;gap:6px}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--raised)} .dots i.on{background:var(--gold)}
+/* live */
+.live-num{font-size:min(31vw,128px);font-weight:700;letter-spacing:-.05em;line-height:1}
+.instr{border-radius:20px;background:var(--panel);padding:16px;min-height:80px;display:flex;flex-direction:column;gap:12px;justify-content:center;border:1px solid transparent;transition:border-color .3s}
+.instr.hot{border-color:var(--gold)}
+.instr.swap{animation:enter .3s var(--ease)}
+.bigbtn{flex:1;height:68px;border-radius:20px;background:var(--panel);font-size:22px;font-weight:600}
+.paused .live-num,.paused .bigbtn{opacity:.35}
+/* sheets */
+#sheet{position:fixed;inset:0;z-index:10;pointer-events:none}
+#sheet .back{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:opacity .3s}
+#sheet .body{position:absolute;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;max-height:92%;overflow-y:auto;background:#19191C;border-radius:28px 28px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:14px;transform:translateY(102%);transition:transform .42s var(--ease)}
+#sheet.open{pointer-events:auto} #sheet.open .back{opacity:1} #sheet.open .body{transform:none}
+#sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--raised);margin:0 auto 6px;flex:none}
+#sheet .rows,#sheet .panel{background:var(--bg)}
+input,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;user-select:text;-webkit-user-select:text}
+input.hero{font-size:44px;font-weight:700;letter-spacing:-.03em;text-align:center;border:0;background:none;padding:6px 0}
+textarea{min-height:96px;resize:none;line-height:1.4}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--dim)}
+.badge{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.badge:last-child{border-bottom:0}
+.badge i{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid var(--raised);display:grid;place-items:center}
+.badge.on i{background:var(--gold);border-color:var(--gold)}
+.badge.off{color:var(--dim)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"><div id="root" style="flex:1;display:flex;flex-direction:column;min-height:0"></div></div>
+<div id="sheet"><div class="back" data-a="closeSheet"></div><div class="body" role="dialog" aria-modal="true"></div></div>
+<script>
+(function(){
+"use strict";
+/* ================= data ================= */
+var SEED=[90,-70,45,67.5,-40,75,25,-100,140,-300,-90,125,110,50,-260,50,-40,-60,35,75,-150,-360];
+var RATE={solo:200,few:110,full:65};
+var TABLE={solo:"Just me",few:"2–3 players",full:"4 or more",mixed:"Mixed"};
+var MOOD={1:"Rough",2:"Fine",3:"Good"};
+var EXIT=["Stack gone","Locked a win","Tired","Had enough","Chasing","Other"];
+var DEF={cur:"$",budget:0,cooloffH:24,checkinMin:60,buyIn:100,bet:5,lockAt:200,keep:100,note:"The buy-in is the ticket price. When it's gone, the night was still a good one. Go home."};
+function seed(){return {v:1,updatedAt:1,settings:clone(DEF),live:null,sessions:SEED.map(function(n,i){var last=i===SEED.length-1;
+  return {id:"v"+(i+1),ts:i+1,date:last?"2026-11-15":null,net:n,bet:10,hands:last?550:225,minutes:last?270:null,kept:null,legacy:true};})};}
+var state=seed(), db=null, pushTimer=null, writing=false, writeNext=false;
+var ui={tab:"home",flow:null,reviewId:null,range:"all",by:"table",pre:{size:"few",mood:2},sheet:null,lastKey:""};
+var charts={};
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function normalize(s){s.settings=Object.assign(clone(DEF),s.settings||{});s.sessions=s.sessions||[];s.live=s.live||null;return s;}
+function loadLocal(){try{var s=JSON.parse(localStorage.getItem("bj-tracker")||"null");if(s&&s.sessions)state=normalize(s);}catch(e){}}
+function save(){state.updatedAt=Date.now();try{localStorage.setItem("bj-tracker",JSON.stringify(state));}catch(e){}
+  if(db){clearTimeout(pushTimer);pushTimer=setTimeout(push,500);}}
+function push(){pushTimer=null;if(!db)return;if(writing){writeNext=true;return;}writing=true;
+  db.doc("app/state").set(clone(state)).catch(function(){}).then(function(){writing=false;if(writeNext){writeNext=false;push();}});}
+function connect(){if(!(window.claude&&window.claude.use))return;
+  Promise.resolve(window.claude.use("db")).then(function(d){if(!d)return;db=d;
+    d.doc("app/state").onSnapshot(function(s){
+      if(!s.exists){push();return;}
+      var r=s.data(),ru=r.updatedAt||0,lu=state.updatedAt||0;
+      if(ru>lu&&!pushTimer&&!writing){state=normalize(clone(r));try{localStorage.setItem("bj-tracker",JSON.stringify(state));}catch(e){}
+        if(!ui.sheet)render(true);}
+      else if(ru<lu&&!pushTimer&&!writing)push();
+    },function(){});
+  }).catch(function(){});}
+
+/* ================= helpers ================= */
+function S(){return state.settings;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function num(v,d){var n=parseFloat(v);return isFinite(n)?n:d;}
+function money(n,sign){var a=Math.abs(n),s=(Math.round(a*100)%100)?a.toFixed(2):Math.round(a).toLocaleString("en");return (n<0?"−":(sign&&n>0?"+":""))+S().cur+s;}
+function tone(n){return n>0?"pos":"";}
+function dur(min){min=Math.max(0,Math.round(min));var h=Math.floor(min/60),m=min%60;return h?h+"h "+("0"+m).slice(-2)+"m":m+"m";}
+function iso(t){var d=new Date(t);return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
+function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
+function nice(s,i){return s.date?pd(s.date).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):"Visit "+(i+1);}
+function sorted(){return state.sessions.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0);});}
+function sum(a){return a.reduce(function(x,y){return x+y;},0);}
+function phi(z){var t=1/(1+0.2316419*Math.abs(z)),d=0.3989423*Math.exp(-z*z/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p;}
+function handsOf(s){if(s.hands)return s.hands;if(s.minutes)return s.minutes/60*(RATE[s.table]||100);return null;}
+function ev(s){var h=handsOf(s);if(!h||!s.bet)return null;return {mean:-0.005*h*s.bet,sd:1.15*s.bet*Math.sqrt(h),hands:h};}
+function oneIn(p){p=Math.max(p,0.0005);var x=1/p;return x<2.05?"about 1 in 2":"1 in "+Math.round(x);}
+function luck(s){var e=ev(s);if(!e)return null;var z=(s.net-e.mean)/e.sd,bad=z<0;
+  function at(f){var h=e.hands*f,m=-0.005*h*s.bet,sd=1.15*s.bet*Math.sqrt(h),zz=(s.net-m)/sd;return bad?phi(zz):1-phi(zz);}
+  var a=at(0.75),b=at(1.3),lo=Math.max(a,b),hi=Math.min(a,b);
+  return {z:z,bad:bad,edge:e.mean,luck:s.net-e.mean,range:Math.round(1/lo)===Math.round(1/hi)?oneIn(lo):oneIn(lo)+" to "+oneIn(hi),typical:Math.abs(z)<0.5};}
+function streak(list){var t=list.filter(function(s){return s.kept===true||s.kept===false;}),n=0;for(var i=t.length-1;i>=0&&t[i].kept;i--)n++;return n;}
+function monthNet(){var m=iso(Date.now()).slice(0,7);return sum(state.sessions.filter(function(s){return s.date&&s.date.slice(0,7)===m;}).map(function(s){return s.net;}));}
+function lastEnd(){var m=0;state.sessions.forEach(function(s){if(s.endAt&&s.endAt>m)m=s.endAt;});return m;}
+function blocks(){var out=[],st=S(),left=lastEnd()+st.cooloffH*3600000-Date.now();
+  if(st.cooloffH>0&&left>0)out.push({k:"cooloff",t:"Cool-off: "+dur(left/60000)+" left",d:"You set a "+st.cooloffH+"-hour gap between sessions."});
+  if(st.budget>0&&st.budget+monthNet()<st.buyIn)out.push({k:"budget",t:"This month's budget can't cover a buy-in",d:money(Math.max(0,st.budget+monthNet()))+" left of "+money(st.budget)+"."});
+  return out;}
+function tween(el,to,ms){if(!el)return;var from=num(el.dataset.v,to);el.dataset.v=to;if(from===to){el.textContent=money(to);return;}
+  var t0=performance.now();(function f(t){var k=Math.min(1,(t-t0)/(ms||320)),e=1-Math.pow(1-k,3),v=from+(to-from)*e;
+    el.textContent=money(Math.abs(to%1)?Math.round(v*100)/100:Math.round(v));if(k<1&&num(el.dataset.v)===to)requestAnimationFrame(f);else if(k>=1)el.textContent=money(to);})(t0);}
+var IC={
+  home:'<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z"/></svg>',
+  stats:'<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>',
+  list:'<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  gear:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
+  plus:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  back:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  ok:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9B26A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  okd:'<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A0A0B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  no:'<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F0897B" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+function seg(act,opts,val,cls){return '<div class="seg '+(cls||"")+'" data-seg><div class="thumb"></div>'+opts.map(function(o){return '<button class="press" data-a="'+act+'" data-v="'+esc(o[0])+'" aria-pressed="'+(String(o[0])===String(val))+'">'+esc(o[1])+'</button>';}).join("")+'</div>';}
+function placeThumbs(root){(root||document).querySelectorAll("[data-seg]").forEach(function(s){var b=s.querySelector('[aria-pressed="true"]'),t=s.querySelector(".thumb");if(!b){t.style.width="0";return;}t.style.left=b.offsetLeft+"px";t.style.width=b.offsetWidth+"px";});}
+
+/* ================= charts ================= */
+function lineChart(id,ys,labels,o){o=o||{};var W=350,H=o.h||130,p=8,all=ys.concat(o.band?o.band.lo.concat(o.band.hi):[],[0]);
+  var lo=Math.min.apply(null,all),hi=Math.max.apply(null,all);if(hi===lo)hi=lo+1;var n=ys.length;
+  function x(i){return n>1?i/(n-1)*W:W/2;}function y(v){return p+(H-2*p)*(hi-v)/(hi-lo);}
+  charts[id]={ys:ys,labels:labels,n:n,yp:function(i){return y(ys[i])/H*100;}};
+  var pts=ys.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" "),band="",exp="";
+  if(o.band){band='<polygon fill="#F2F2F3" opacity=".07" points="'+o.band.hi.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ")+" "+o.band.lo.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).reverse().join(" ")+'"/>';
+    exp='<polyline fill="none" stroke="#9A9AA2" stroke-width="1.5" stroke-dasharray="4 4" points="'+o.band.mid.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ")+'"/>';}
+  return '<div class="chart" data-chart="'+id+'"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(o.aria||"Chart")+'">'
+    +'<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#2E2E33" stroke-width="1"/>'+band+exp
+    +'<polyline fill="none" stroke="#F2F2F3" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="'+pts+'"/>'
+    +'<circle cx="'+x(n-1).toFixed(1)+'" cy="'+y(ys[n-1]).toFixed(1)+'" r="4" fill="#D9B26A"/></svg>'
+    +'<div class="cur" hidden></div><div class="dot" hidden></div></div>'
+    +'<div class="sp s13 dim" data-tip="'+id+'"><span>'+esc(o.left||"")+'</span><span>'+esc(o.right||"Drag across to inspect")+'</span></div>';}
+function barChart(id,ys,labels,sd){var W=350,H=140,p=8,all=ys.concat([0,sd,-sd]),lo=Math.min.apply(null,all),hi=Math.max.apply(null,all),n=ys.length,bw=W/n;
+  function y(v){return p+(H-2*p)*(hi-v)/(hi-lo);}
+  charts[id]={ys:ys,labels:labels,n:n,bar:true,yp:function(i){return y(ys[i])/H*100;}};
+  var out=ys.map(function(v,i){var a=y(0),b=y(v);return '<rect x="'+(i*bw+bw*.18).toFixed(1)+'" y="'+Math.min(a,b).toFixed(1)+'" width="'+(bw*.64).toFixed(1)+'" height="'+Math.max(1.5,Math.abs(b-a)).toFixed(1)+'" rx="2" fill="'+(v>=0?"#7FD6A4":Math.abs(v)>sd?"#D9B26A":"#6B6B73")+'"/>';}).join("");
+  return '<div class="chart" data-chart="'+id+'"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Luck on each night">'
+    +'<rect x="0" width="'+W+'" y="'+y(sd).toFixed(1)+'" height="'+(y(-sd)-y(sd)).toFixed(1)+'" fill="#F2F2F3" opacity=".05" rx="4"/>'+out
+    +'<line x1="0" x2="'+W+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#55555C" stroke-width="1"/></svg><div class="cur" hidden></div><div class="dot" hidden></div></div>'
+    +'<div class="sp s13 dim" data-tip="'+id+'"><span>Shaded: an ordinary night</span><span>Drag to inspect</span></div>';}
+function scrub(ev){var c=ev.target.closest&&ev.target.closest(".chart");if(!c)return;var d=charts[c.dataset.chart];if(!d)return;
+  var r=c.getBoundingClientRect(),f=Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),i=d.bar?Math.min(d.n-1,Math.floor(f*d.n)):Math.round(f*(d.n-1));
+  var cur=c.querySelector(".cur"),dot=c.querySelector(".dot"),tip=document.querySelector('[data-tip="'+c.dataset.chart+'"]');
+  cur.hidden=dot.hidden=false;cur.style.left=dot.style.left=(d.bar?(i+.5)/d.n*100:(d.n>1?i/(d.n-1)*100:50))+"%";dot.style.top=d.yp(i)+"%";
+  if(tip)tip.innerHTML='<span class="mid">'+esc(d.labels[i])+'</span><span style="color:var(--text);font-weight:600">'+money(d.ys[i],true)+'</span>';}
+function bell(z){var x=Math.max(8,Math.min(292,150+z*45)),bad=z<0,yy=6+64*(1-Math.exp(-Math.pow((x-150)/45,2)/2));
+  var d="M0,70",i;for(i=0;i<=300;i+=6)d+=" L"+i+","+(6+64*(1-Math.exp(-Math.pow((i-150)/45,2)/2))).toFixed(1);
+  var tail="M"+(bad?0:300)+",70";for(i=bad?0:300;bad?i<=x:i>=x;i+=bad?4:-4)tail+=" L"+i+","+(6+64*(1-Math.exp(-Math.pow((i-150)/45,2)/2))).toFixed(1);
+  tail+=" L"+x.toFixed(1)+","+yy.toFixed(1)+" L"+x.toFixed(1)+",70 Z";
+  return '<svg viewBox="0 0 300 74" role="img" aria-label="Where this result sits among possible results" style="display:block;width:100%;height:auto">'
+    +'<path d="'+tail+'" fill="#D9B26A" opacity=".3"/><path d="'+d+'" fill="none" stroke="#6B6B73" stroke-width="2"/>'
+    +'<line x1="'+x+'" x2="'+x+'" y1="10" y2="70" stroke="#D9B26A" stroke-width="2"/><circle cx="'+x+'" cy="'+yy.toFixed(1)+'" r="4" fill="#D9B26A"/>'
+    +'<line x1="0" x2="300" y1="70" y2="70" stroke="#2E2E33"/></svg><div class="sp s13 dim"><span>Unlucky</span><span>Typical</span><span>Lucky</span></div>';}
+function histogram(nets){var w=50,lo=Math.floor(Math.min.apply(null,nets)/w),hi=Math.floor(Math.max.apply(null,nets)/w),bins=[],i,mx=1;
+  for(i=lo;i<=hi;i++)bins.push(0);nets.forEach(function(n){bins[Math.floor(n/w)-lo]++;});mx=Math.max.apply(null,bins);
+  var W=350,H=110,bw=W/bins.length,out="";
+  bins.forEach(function(c,k){var h=c/mx*(H-22),neg=(k+lo)<0;if(c)out+='<rect x="'+(k*bw+2).toFixed(1)+'" y="'+(H-18-h).toFixed(1)+'" width="'+(bw-4).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="3" fill="'+(neg?"#55555C":"#7FD6A4")+'"/><text x="'+(k*bw+bw/2).toFixed(1)+'" y="'+(H-22-h).toFixed(1)+'" font-size="10" fill="#9A9AA2" text-anchor="middle">'+c+'</text>';});
+  var zx=(0-lo)*bw;
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="How often each size of result happened" style="display:block;width:100%;height:auto">'+out
+   +'<line x1="0" x2="'+W+'" y1="'+(H-18)+'" y2="'+(H-18)+'" stroke="#2E2E33"/>'
+   +'<g font-size="11" fill="#9A9AA2"><text x="0" y="'+(H-4)+'">'+money(lo*w)+'</text><text x="'+zx.toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle">'+money(0)+'</text><text x="'+W+'" y="'+(H-4)+'" text-anchor="end">'+money((hi+1)*w,true)+'</text></g></svg>';}
+
+/* ================= simulator ================= */
+function draw(){var r=Math.random();return r<.05?-2:r<.474?-1:r<.559?0:r<.9?1:r<.945?1.5:2;}
+function simulate(st){var N=1500,cap=450,lose=0,small=0,bigw=0,other=0,hands=[],playOn=st.keep,i;
+  for(i=0;i<N;i++){var t=st.buyIn,pk=0,h=0;
+    while(t>=st.bet&&h<cap){t+=draw()*st.bet;h++;var trig=pk>0?playOn*2:st.lockAt;if(t>=trig&&t>playOn){pk+=t-playOn;t=playOn;}}
+    var net=t+pk-st.buyIn;hands.push(h);if(net<=-st.buyIn+st.bet)lose++;else if(net<=0)other++;else if(net<=st.buyIn)small++;else bigw++;}
+  hands.sort(function(a,b){return a-b;});
+  return {lose:lose/N,other:other/N,small:small/N,big:bigw/N,medH:hands[Math.floor(N/2)]};}
+var simCache={k:"",r:null};
+function sim(){var st=S(),k=[st.buyIn,st.bet,st.lockAt,st.keep].join("|");if(simCache.k!==k)simCache={k:k,r:simulate(st)};return simCache.r;}
+
+/* ================= views ================= */
+function vHome(){var list=sorted(),nets=list.map(function(s){return s.net;}),tot=sum(nets),run=[0],c=0,labels=["Start"];
+  list.forEach(function(s,i){c+=s.net;run.push(Math.round(c*100)/100);labels.push(nice(s,i));});
+  var st=streak(list),tracked=list.filter(function(s){return s.kept!==null&&s.kept!==undefined;}).length,S_=S(),left=S_.budget+monthNet();
+  var recent=list.slice(-3).reverse().map(function(s){var i=list.indexOf(s);return rowSession(s,i);}).join("");
+  return head("Blackjack",'<button class="icon press" data-a="settings" aria-label="Settings">'+IC.gear+'</button>')
+   +'<div class="panel"><div class="sp"><div class="col"><span class="s13 dim">All time</span><span class="big">'+money(tot,true)+'</span></div><div class="col" style="align-items:flex-end"><span class="s13 dim">Sessions</span><span class="s17" style="font-weight:600">'+list.length+'</span></div></div>'
+   +(list.length?lineChart("home",run,labels,{aria:"Running total across sessions",left:"First visit",right:"Drag to inspect"}):'<p class="dim s15">Your running total appears after the first session.</p>')+'</div>'
+   +'<div class="grid2"><div class="panel" style="gap:6px"><span class="s13 dim">Rules-kept streak</span><span class="med">'+st+(st===1?" night":" nights")+'</span><div class="dots">'+[0,1,2,3,4].map(function(i){return '<i class="'+(i<st?"on":"")+'"></i>';}).join("")+'</div></div>'
+   +'<div class="panel" style="gap:6px"><span class="s13 dim">'+(S_.budget>0?"Budget left this month":"This month")+'</span><span class="med">'+(S_.budget>0?money(Math.max(0,left)):money(monthNet(),true))+'</span>'+(S_.budget>0?'<div class="bar"><i style="width:'+Math.max(0,Math.min(100,left/S_.budget*100))+'%"></i></div>':'<span class="s13 dim">No budget set</span>')+'</div></div>'
+   +(tracked?"":'<p class="s13 dim" style="padding:0 4px">Your 22 earlier visits are loaded. The streak starts with the first session you run here.</p>')
+   +(recent?'<div class="rows">'+recent+'</div>':"");}
+function head(t,right,sub){return '<div class="head"><div class="col">'+(sub?'<span class="s15 dim">'+esc(sub)+'</span>':"")+'<h1>'+esc(t)+'</h1></div>'+(right||"")+'</div>';}
+function rowSession(s,i){var bits=[];if(s.minutes)bits.push(dur(s.minutes));if(s.bet&&!s.legacy)bits.push(money(s.bet)+" hands");if(s.kept===true)bits.push("Rules kept");if(s.kept===false)bits.push("Rule broken");
+  return '<button class="rowi press" data-a="open" data-id="'+esc(s.id)+'" style="text-align:left;width:100%"><span class="col"><span style="font-weight:500">'+esc(nice(s,i))+'</span><span class="s13 dim">'+esc(bits.join(" · ")||"Result only")+'</span></span><span class="s17 '+tone(s.net)+'" style="font-weight:600">'+money(s.net,true)+'</span></button>';}
+
+function vPlan(){var st=S(),r=sim(),b=blocks(),pocket=st.lockAt-st.keep;
+  function stp(k,v){return '<div class="step"><button class="press" data-a="step" data-k="'+k+'" data-d="-1" aria-label="Less">−</button><b>'+v+'</b><button class="press" data-a="step" data-k="'+k+'" data-d="1" aria-label="More">+</button></div>';}
+  var pl=Math.round(r.lose*100),ps=Math.round(r.small*100),pb=Math.round(r.big*100),po=Math.max(0,100-pl-ps-pb);
+  return head("Tonight",'<button class="icon press" data-a="home" aria-label="Back">'+IC.back+'</button>',new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"}))
+   +b.map(function(x){return '<div class="panel" style="border:1px solid var(--bad);gap:4px"><span style="font-weight:600">'+esc(x.t)+'</span><span class="s15 dim">'+esc(x.d)+' Starting anyway is logged as a broken rule.</span></div>';}).join("")
+   +'<div class="rows"><div class="rowi"><span>Buy-in, once</span>'+stp("buyIn",money(st.buyIn))+'</div><div class="rowi"><span>Bet, every hand</span>'+stp("bet",money(st.bet))+'</div>'
+   +'<div class="rowi"><span>Pocket '+money(pocket)+' at</span>'+stp("lockAt",'<span class="gold">'+money(st.lockAt)+'</span>')+'</div>'
+   +'<div class="rowi"><span>Then play on with</span>'+stp("keep",money(st.keep))+'</div>'
+   +'<div class="rowi"><span>Check in every</span>'+stp("checkinMin",st.checkinMin+"m")+'</div></div>'
+   +'<div class="panel"><div class="sp"><h2>100 nights with this plan</h2><span class="s13 dim">'+Math.floor(st.buyIn/st.bet)+' bets deep</span></div>'
+   +'<div style="display:flex;gap:3px;height:26px"><div style="width:'+pl+'%;background:#3A3A40;border-radius:6px 2px 2px 6px"></div>'+(po?'<div style="width:'+po+'%;background:#55555C;border-radius:2px"></div>':"")+'<div style="width:'+ps+'%;background:#A88A52;border-radius:2px"></div><div style="flex:1;background:var(--gold);border-radius:2px 6px 6px 2px"></div></div>'
+   +'<div class="sp s13"><span class="col"><b>'+pl+' nights</b><span class="dim">lose the buy-in</span></span>'+(po>3?'<span class="col"><b>'+po+'</b><span class="dim">small loss</span></span>':"")+'<span class="col"><b>'+ps+' nights</b><span class="dim">win up to '+money(st.buyIn)+'</span></span><span class="col" style="align-items:flex-end"><b>'+pb+' nights</b><span class="dim">win more</span></span></div>'
+   +'<p class="s13 dim">A typical night lasts about '+r.medH+' hands. No night can lose more than '+money(st.buyIn)+'.'+(st.buyIn/st.bet<15?" Under 15 bets is thin: the stack often goes in half an hour.":"")+'</p></div>'
+   +'<button class="panel press" data-a="note" style="text-align:left;gap:6px"><span class="s13 dim">Note to self · tap to edit</span><span class="s17" style="line-height:1.4">'+esc(st.note)+'</span></button>'
+   +'<div class="col" style="gap:8px"><span class="s13 dim" style="padding:0 4px">Table right now</span>'+seg("preSize",[["solo","Just me"],["few","2–3"],["full","4+"]],ui.pre.size,"tall")
+   +'<span class="s13 dim" style="padding:4px 4px 0">How you feel going in</span>'+seg("preMood",[[1,"Rough"],[2,"Fine"],[3,"Good"]],ui.pre.mood,"tall")+'</div>'
+   +'<div class="grow"></div><p class="s13 dim" style="text-align:center">The plan locks when you start.</p>'
+   +'<button class="btn hold" data-hold="start"><i></i><span>'+(b.length?"Hold to start anyway":"Hold to commit")+'</span></button>';}
+
+/* ----- live ----- */
+function L(){return state.live;}
+function playMs(l){return Date.now()-l.startAt-l.pausedMs-(l.pausedAt?Date.now()-l.pausedAt:0);}
+function liveHands(l){var t=playMs(l),h=0;l.segs.forEach(function(s,i){var end=i<l.segs.length-1?l.segs[i+1].at:t;h+=Math.max(0,end-s.at)/3600000*RATE[s.size];});return Math.round(h);}
+function trig(l){return l.pocket>0?l.playOn*2:l.lockAt;}
+function rebuys(l){return sum(l.rebuys);}
+function instrKey(l){if(l.table<=0)return "zero";if(l.table>=trig(l))return "pocket";if(playMs(l)-(l.lastCheck||0)>=S().checkinMin*60000&&!l.pausedAt)return "checkin";return "next";}
+function instrHtml(l,k){
+  if(k==="zero")return '<div class="col"><span style="font-size:20px;font-weight:700">The stack is gone. Head home.</span><span class="s15 dim">'+esc(S().note)+'</span></div><button class="btn gold press" data-a="end">End session</button>';
+  if(k==="pocket"){var take=l.table-l.playOn;return '<div class="sp" style="align-items:center"><div class="col"><span style="font-size:20px;font-weight:700">Pocket '+money(take)+'</span><span class="s15 dim">'+(l.pocket>0?"Locks in more. Play on with "+money(l.playOn):(take>=l.buyIn+rebuys(l)?"Then tonight can't lose":"Play on with "+money(l.playOn)))+'</span></div><button class="btn gold sm press" data-a="pocket">Done</button></div>';}
+  if(k==="checkin")return '<span style="font-size:17px;font-weight:600">Still enjoying this, or chasing?</span><div style="display:flex;gap:8px"><button class="btn soft sm press grow" style="background:var(--raised)" data-a="check" data-v="ok">Enjoying it</button><button class="btn soft sm press grow" style="background:var(--raised)" data-a="check" data-v="tired">Tired</button><button class="btn soft sm press grow" style="background:var(--raised)" data-a="check" data-v="chase">Chasing</button></div>';
+  return '<span class="s15 dim">Next: pocket '+money(trig(l)-l.playOn)+' when the table reaches <b class="gold">'+money(trig(l))+'</b></span>';}
+function vLive(){var l=L();
+  return '<div class="head"><span class="s15 dim" id="lv-time"></span>'+seg("size",[["solo","Just me"],["few","2–3"],["full","4+"]],l.size)+'</div>'
+   +'<button class="col press" data-a="exact" style="align-items:center;gap:4px;padding:30px 0 14px" aria-label="Type the exact table stack"><span class="s15 dim">On the table</span><span class="live-num" id="lv-table" data-v="'+l.table+'">'+money(l.table)+'</span></button>'
+   +'<div class="col" style="gap:8px;padding:0 4px"><div class="bar"><i id="lv-bar"></i></div><div class="sp s13 dim"><span>'+money(0)+'</span><span id="lv-goal"></span></div></div>'
+   +'<div class="instr" id="lv-instr"></div>'
+   +'<div class="sp s15" style="padding:2px 4px"><span class="dim">In pocket <b id="lv-pocket" data-v="'+l.pocket+'" style="color:var(--text)">'+money(l.pocket)+'</b></span><span class="dim" id="lv-floor"></span></div>'
+   +'<div class="grow"></div><div style="display:flex;gap:12px"><button class="bigbtn press" data-a="adj" data-d="-1">− '+money(l.bet)+'</button><button class="bigbtn press" data-a="adj" data-d="1">+ '+money(l.bet)+'</button></div>'
+   +'<div class="sp" style="padding:0 4px;align-items:center"><button class="txt press" data-a="pause" id="lv-pause"></button><button class="txt press" data-a="slip">Log a slip</button><button class="txt on press" data-a="end">End session</button></div>';}
+function updateLive(){var l=L();if(!l||!document.getElementById("lv-table"))return;
+  var t=trig(l),k=instrKey(l),box=document.getElementById("lv-instr"),sig=k+"|"+l.table+"|"+l.pocket;
+  tween(document.getElementById("lv-table"),l.table);tween(document.getElementById("lv-pocket"),l.pocket);
+  document.getElementById("lv-bar").style.width=Math.min(100,l.table/t*100)+"%";
+  document.getElementById("lv-goal").innerHTML='<span class="gold" style="font-weight:600">'+money(t)+'</span>';
+  var fl=l.pocket-l.buyIn-rebuys(l);document.getElementById("lv-floor").innerHTML=fl>=0?'Locked in <b class="gold">'+money(fl,true)+'</b>':'Worst case <b style="color:var(--text)">'+money(fl)+'</b>';
+  if(box.dataset.sig!==sig){var kc=box.dataset.k!==k;box.dataset.sig=sig;box.dataset.k=k;box.innerHTML=instrHtml(l,k);box.className="instr"+(k==="next"?"":" hot")+(kc?" swap":"");}
+  document.getElementById("lv-pause").textContent=l.pausedAt?"Resume":"Pause";
+  document.querySelector(".screen").classList.toggle("paused",!!l.pausedAt);tick();}
+function tick(){var l=L(),el=document.getElementById("lv-time");if(!l||!el)return;var m=playMs(l)/60000;
+  el.textContent=(l.pausedAt?"Paused · ":"")+dur(m)+" · about "+liveHands(l)+" hands";
+  var box=document.getElementById("lv-instr");if(box&&box.dataset.k!==instrKey(l))updateLive();}
+setInterval(tick,1000);
+
+/* ----- review / detail ----- */
+function rulesOf(s){var r=[];if(s.rules){r.push(["One buy-in",s.rules.one]);r.push(["Same bet all night",s.rules.bet]);if(s.rules.pocket!==null&&s.rules.pocket!==undefined)r.push(["Pocketed at the lock point",s.rules.pocket]);if(s.rules.gate===false)r.push(["Waited for cool-off and budget",false]);}return r;}
+function vReview(){var list=sorted(),s=list.filter(function(x){return x.id===ui.reviewId;})[0];if(!s){ui.flow=null;return vHome();}
+  var i=list.indexOf(s),lk=luck(s),bits=[];if(s.minutes)bits.push(dur(s.minutes));var h=handsOf(s);if(h)bits.push("about "+Math.round(h)+" hands");if(s.bet)bits.push(money(s.bet)+" a hand");
+  var title=s.kept===true?"Every rule kept":s.kept===false?"A rule slipped":"Session";
+  var upTo=list.slice(0,i+1),st=streak(upTo),rules=rulesOf(s);
+  return head(title,'<button class="icon press" data-a="editSession" data-id="'+esc(s.id)+'" aria-label="Edit">'+IC.gear+'</button>',nice(s,i)+(bits.length?" · "+bits.join(" · "):""))
+   +'<div class="panel"><div class="sp"><span class="s13 dim">Result</span><span class="s13 dim">'+(lk?(lk.typical?"How typical":lk.bad?"How unlucky":"How lucky"):"")+'</span></div>'
+   +'<div class="sp"><span class="big '+tone(s.net)+'">'+money(s.net,true)+'</span><span style="font-size:19px;font-weight:600">'+(lk?(lk.typical?"A typical night":lk.range):"")+'</span></div>'
+   +(lk?bell(lk.z)+'<p class="s15 mid">'+money(Math.abs(Math.round(lk.edge)))+' of this was the house edge. '+(lk.luck>=0?money(Math.round(lk.luck))+" was good luck.":money(Math.abs(Math.round(lk.luck)))+" was bad luck.")+(s.legacy&&!s.minutes?' <span class="dim">Hands assumed.</span>':"")+'</p>':'<p class="s15 dim">Add minutes played and bet size to see how lucky this night was.</p>')+'</div>'
+   +(rules.length?'<div class="rows">'+rules.map(function(r){return '<div class="rowi"><span>'+r[0]+'</span>'+(r[1]?IC.ok:IC.no)+'</div>';}).join("")+'</div>':"")
+   +(s.kept!==null&&s.kept!==undefined?'<div class="panel" style="flex-direction:row;justify-content:space-between;align-items:center"><div class="col"><span class="s13 dim">Streak after this night</span><span class="med">'+st+(st===1?" night":" nights")+'</span></div><div class="dots">'+[0,1,2,3,4].map(function(k){return '<i class="'+(k<st?"on":"")+'"></i>';}).join("")+'</div></div>':"")
+   +((s.reason||s.table||s.moodBefore)?'<div class="rows">'+(s.reason?'<div class="rowi"><span class="dim">Left because</span><span>'+esc(s.reason)+'</span></div>':"")+(s.table?'<div class="rowi"><span class="dim">Table</span><span>'+TABLE[s.table]+'</span></div>':"")+(s.moodBefore?'<div class="rowi"><span class="dim">Mood before, after</span><span>'+MOOD[s.moodBefore]+(s.moodAfter?", "+MOOD[s.moodAfter]:"")+'</span></div>':"")+(s.pocketed?'<div class="rowi"><span class="dim">Pocketed</span><span>'+money(s.pocketed)+'</span></div>':"")+'</div>':"")
+   +'<div class="grow"></div><button class="btn press" data-a="home">Done</button>';}
+
+/* ----- history ----- */
+function vHistory(){var list=sorted(),out="",last="";
+  list.slice().reverse().forEach(function(s){var i=list.indexOf(s),g=s.date?pd(s.date).toLocaleDateString("en-GB",{month:"long",year:"numeric"}):"Earlier visits";
+    if(g!==last){out+=(last?'</div>':"")+'<span class="s13 dim" style="padding:6px 4px 0">'+g+'</span><div class="rows">';last=g;}out+=rowSession(s,i);});
+  return head("History",'<button class="icon press" data-a="quick" aria-label="Add a session">'+IC.plus+'</button>')+(out?out+'</div>':'<p class="dim">No sessions yet.</p>');}
+
+/* ----- stats ----- */
+function scope(){var list=sorted();if(ui.range==="tracked")return list.filter(function(s){return !s.legacy;});if(ui.range==="last10")return list.slice(-10);return list;}
+var BY={table:{t:"Table",f:function(s){return s.table?TABLE[s.table]:null;}},
+  len:{t:"Length",f:function(s){if(!s.minutes)return null;return s.minutes<60?"Under 1h":s.minutes<120?"1–2h":s.minutes<180?"2–3h":"3h or more";}},
+  mood:{t:"Mood",f:function(s){return s.moodBefore?MOOD[s.moodBefore]+" going in":null;}},
+  day:{t:"Day",f:function(s){return s.date?pd(s.date).toLocaleDateString("en-GB",{weekday:"long"}):null;}},
+  exit:{t:"Exit",f:function(s){return s.reason||null;}}};
+function vStats(){var all=sorted(),list=scope();
+  var top=head("Stats")+seg("range",[["all","All"],["tracked","With rules"],["last10","Last 10"]],ui.range,"tall");
+  if(!list.length)return top+'<div class="panel"><p class="dim">'+(ui.range==="tracked"?"Nothing here yet. Sessions you run in the app, with rules, show up in this view.":"No sessions yet.")+'</p></div>';
+  var nets=list.map(function(s){return s.net;}),wins=nets.filter(function(n){return n>0;}),losses=nets.filter(function(n){return n<0;}),tot=sum(nets);
+  var aw=wins.length?sum(wins)/wins.length:0,al=losses.length?sum(losses)/losses.length:0,mx=Math.max(aw,-al,1);
+  // luck vs edge
+  var run=[0],mid=[0],lo=[0],hi=[0],c=0,m=0,v=0,labels=["Start"],withEv=0,dev=[],sds=[];
+  list.forEach(function(s){var e=ev(s);c+=s.net;if(e){m+=e.mean;v+=e.sd*e.sd;withEv++;sds.push(e.sd);}dev.push(Math.round(s.net-(e?e.mean:0)));run.push(Math.round(c));mid.push(m);lo.push(m-Math.sqrt(v));hi.push(m+Math.sqrt(v));labels.push(nice(s,all.indexOf(s)));});
+  var z=v>0?(tot-m)/Math.sqrt(v):0,verdict=Math.abs(z)<1?"inside the normal range":z<0?(z<-2?"well below the normal range":"on the unlucky side of normal"):(z>2?"well above the normal range":"on the lucky side of normal");
+  var avgSd=sds.length?sum(sds)/sds.length:100;
+  // discipline
+  var tr=list.filter(function(s){return s.kept===true||s.kept===false;}),kept=tr.filter(function(s){return s.kept;}).length,best=0,cur=0,brk={};
+  tr.forEach(function(s){if(s.kept){cur++;best=Math.max(best,cur);}else{cur=0;rulesOf(s).forEach(function(r){if(!r[1])brk[r[0]]=(brk[r[0]]||0)+1;});}});
+  var worstRule=Object.keys(brk).sort(function(a,b){return brk[b]-brk[a];})[0];
+  // streaks of results
+  var ws=0,ls=0,cw=0,cl=0;nets.forEach(function(n){if(n>0){cw++;cl=0;}else if(n<0){cl++;cw=0;}ws=Math.max(ws,cw);ls=Math.max(ls,cl);});
+  var longest=Math.max.apply(null,list.map(function(s){return s.minutes||0;}));
+  // breakdown
+  var B=BY[ui.by],groups={},have=0;list.forEach(function(s){var k=B.f(s);if(k===null)return;have++;(groups[k]=groups[k]||[]).push(s.net);});
+  var gk=Object.keys(groups).sort(function(a,b){return groups[b].length-groups[a].length;}),gmx=Math.max.apply(null,gk.map(function(k){return Math.abs(sum(groups[k])/groups[k].length);}).concat(1));
+  // before / after
+  var old=all.filter(function(s){return s.legacy;}),nw=all.filter(function(s){return !s.legacy;});
+  function worst(a){return a.length?Math.min.apply(null,a.map(function(s){return s.net;}).concat(0)):0;}
+  function avgLoss(a){var l=a.filter(function(s){return s.net<0;});return l.length?sum(l.map(function(s){return s.net;}))/l.length:0;}
+  return top
+   +'<div class="grid2">'+tile("Net",money(tot,true),list.length+" sessions")+tile("Winning nights",Math.round(wins.length/list.length*100)+"%",wins.length+" won, "+losses.length+" lost")
+   +tile("Average night",money(Math.round(tot/list.length),true),"per session")+tile("Biggest swing",money(Math.max.apply(null,nets.concat(0)),true),"worst "+money(Math.min.apply(null,nets.concat(0))))+'</div>'
+   +(function(){var lk=tot-m,ed=Math.abs(m),tw=ed+Math.abs(lk)||1,p=phi(z),chance=z<0?p:1-p;
+      return '<div class="panel"><div class="sp"><h2>Luck and the house edge</h2><span class="s13 dim">'+withEv+' of '+list.length+' sessions</span></div>'
+      +'<div style="display:flex;gap:3px;height:26px"><div style="width:'+(ed/tw*100)+'%;background:#55555C;border-radius:6px 2px 2px 6px"></div><div style="flex:1;background:'+(lk<0?"var(--gold)":"var(--good)")+';border-radius:2px 6px 6px 2px"></div></div>'
+      +'<div class="sp s13"><span class="col"><b style="font-size:17px">'+money(Math.round(m))+'</b><span class="dim">the price of playing</span></span><span class="col" style="align-items:flex-end"><b style="font-size:17px" class="'+(lk<0?"gold":"pos")+'">'+money(Math.round(lk),true)+'</b><span class="dim">'+(lk<0?"bad luck so far":"good luck so far")+'</span></span></div>'
+      +'<p class="s15 mid">Over this much play, a run this '+(z<0?"unlucky":"lucky")+' or more happens about '+oneIn(chance)+' times. That is '+verdict+'.</p>'
+      +'<h2 style="padding-top:6px">Luck, night by night</h2>'+barChart("luck",dev,labels.slice(1),avgSd)
+      +'<p class="s13 dim">Each bar is that night\'s result minus what the edge predicted. Gold bars are nights well outside ordinary luck.</p>'
+      +(list.some(function(s){return s.legacy&&!s.minutes;})?'<p class="s13 dim">Hands for earlier visits are assumed at 225 a night on '+money(10)+' bets.</p>':"")+'</div>';})()
+   +'<div class="panel"><h2>Size of wins and losses</h2>'
+   +'<div style="display:grid;grid-template-columns:74px 1fr auto;gap:8px 10px;align-items:center" class="s15"><span class="dim">Avg win</span><div class="hbar" style="background:var(--good);width:'+(aw/mx*100)+'%"></div><b class="pos">'+money(Math.round(aw),true)+'</b><span class="dim">Avg loss</span><div class="hbar" style="background:#6B6B73;width:'+(-al/mx*100)+'%"></div><b>'+money(Math.round(al))+'</b></div>'
+   +(aw>0&&al<0?'<p class="s13 dim">'+(-al/aw>=1.3?"Losses run "+(-al/aw).toFixed(1)+"× the size of wins. That is the shape one buy-in is meant to fix.":-al/aw<=0.8?"Wins now run bigger than losses.":"Wins and losses are close in size.")+'</p>':"")+'</div>'
+   +'<div class="panel"><div class="sp"><h2>How results spread</h2><span class="s13 dim">'+money(50)+' steps</span></div>'+histogram(nets)+'</div>'
+   +'<div class="panel"><h2>Break it down</h2>'+seg("by",Object.keys(BY).map(function(k){return [k,BY[k].t];}),ui.by,"on-panel")
+   +(gk.length?gk.map(function(k){var a=sum(groups[k])/groups[k].length;return '<div class="col" style="gap:6px"><div class="sp s15"><span>'+esc(k)+' <span class="dim s13">'+groups[k].length+(groups[k].length===1?" night":" nights")+'</span></span><b class="'+tone(a)+'">'+money(Math.round(a),true)+' avg</b></div><div class="hbar" style="background:'+(a>=0?"var(--good)":"#6B6B73")+';width:'+Math.max(2,Math.abs(a)/gmx*100)+'%"></div></div>';}).join("")+'<p class="s13 dim">'+have+' of '+list.length+' sessions have this detail.</p>'
+     :'<p class="s15 dim">No sessions in this view have that detail yet. It fills in as you log sessions in the app.</p>')+'</div>'
+   +'<div class="panel"><h2>Discipline</h2>'+(tr.length?'<div class="grid2">'+mini("Rules kept",kept+" of "+tr.length)+mini("Current streak",streak(list)+"")+mini("Best streak",best+"")+mini("Slips most on",worstRule||"Nothing")+'</div>':'<p class="s15 dim">Starts counting with the first session you run in the app.</p>')+'</div>'
+   +(old.length&&nw.length?'<div class="panel"><h2>Before the rules, and since</h2><div style="display:grid;grid-template-columns:1fr auto auto;gap:10px 18px" class="s15"><span></span><span class="dim s13">Before</span><span class="dim s13">Since</span>'
+     +'<span class="dim">Sessions</span><b>'+old.length+'</b><b>'+nw.length+'</b><span class="dim">Average loss</span><b>'+money(Math.round(avgLoss(old)))+'</b><b>'+money(Math.round(avgLoss(nw)))+'</b><span class="dim">Worst night</span><b>'+money(worst(old))+'</b><b>'+money(worst(nw))+'</b>'
+     +'<span class="dim">Avg per night</span><b>'+money(Math.round(sum(old.map(function(s){return s.net;}))/old.length),true)+'</b><b>'+money(Math.round(sum(nw.map(function(s){return s.net;}))/nw.length),true)+'</b></div></div>':"")
+   +'<div class="panel"><h2>Records</h2><div class="grid2">'+mini("Best night",money(Math.max.apply(null,nets.concat(0)),true))+mini("Worst night",money(Math.min.apply(null,nets.concat(0))))+mini("Winning run",ws+" in a row")+mini("Losing run",ls+" in a row")+(longest?mini("Longest session",dur(longest)):"")+mini("Total hands",Math.round(sum(list.map(function(s){return handsOf(s)||0;}))).toLocaleString("en"))+'</div></div>'
+   +milestones(all);}
+function tile(a,b,c){return '<div class="panel" style="gap:4px"><span class="s13 dim">'+a+'</span><span class="med">'+b+'</span><span class="s13 dim">'+c+'</span></div>';}
+function mini(a,b){return '<div class="col"><span class="s13 dim">'+a+'</span><span style="font-size:19px;font-weight:600">'+esc(b)+'</span></div>';}
+function milestones(all){var nw=all.filter(function(s){return !s.legacy;}),tr=nw.filter(function(s){return s.kept!==null&&s.kept!==undefined;}),best=0,cur=0;
+  tr.forEach(function(s){if(s.kept){cur++;best=Math.max(best,cur);}else cur=0;});
+  var walked=tr.filter(function(s){return s.kept&&s.reason==="Stack gone";}).length;
+  var M=[["First session with every rule kept",best>=1],["First win locked in the pocket",nw.some(function(s){return s.pocketed>0;})],["Lost the buy-in and walked, 3 times",walked>=3],["3 nights in a row, rules kept",best>=3],["5 nights in a row",best>=5],["10 nights in a row",best>=10],["10 sessions logged in the app",nw.length>=10],["A month inside the budget",S().budget>0&&nw.length>0&&S().budget+monthNet()>=0]];
+  var got=M.filter(function(x){return x[1];}).length;
+  return '<div class="panel" style="gap:4px"><div class="sp"><h2>Milestones</h2><span class="s13 dim">'+got+' of '+M.length+'</span></div>'+M.map(function(x){return '<div class="badge '+(x[1]?"on":"off")+'"><i>'+(x[1]?IC.okd:"")+'</i><span class="s15">'+x[0]+'</span></div>';}).join("")+'</div>';}
+
+/* ================= render ================= */
+function render(force){var root=document.getElementById("root"),key,html,tabs=false;
+  if(state.live&&ui.flow==="live"){key="live";html=vLive();}
+  else if(ui.flow==="plan"){key="plan";html=vPlan();}
+  else if(ui.flow==="review"){key="review:"+ui.reviewId;html=vReview();}
+  else{key=ui.tab;tabs=true;html=ui.tab==="stats"?vStats():ui.tab==="history"?vHistory():vHome();}
+  var old=root.querySelector(".screen"),top=old&&key===ui.lastKey?old.scrollTop:0,enter=key!==ui.lastKey;ui.lastKey=key;
+  root.innerHTML='<div class="screen'+(enter?" enter":"")+'">'+html+'</div>'+(key==="home"?'<div class="cta"><button class="btn press" data-a="'+(state.live?"resume":"plan")+'">'+(state.live?"Back to tonight's session":"Plan a session")+'</button></div>':"")+(tabs?'<div class="tabbar">'+[["home","Home",IC.home],["stats","Stats",IC.stats],["history","History",IC.list]].map(function(t){return '<button class="press" data-a="tab" data-v="'+t[0]+'"'+(ui.tab===t[0]?' aria-current="page"':"")+'>'+t[2]+t[1]+'</button>';}).join("")+'</div>':"");
+  root.querySelector(".screen").scrollTop=top;placeThumbs(root);if(key==="live")updateLive();}
+
+/* ================= sheets ================= */
+function openSheet(type,data){ui.sheet=Object.assign({type:type},data||{});drawSheet();requestAnimationFrame(function(){document.getElementById("sheet").classList.add("open");});}
+function closeSheet(){ui.sheet=null;document.getElementById("sheet").classList.remove("open");if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();}
+function drawSheet(){var s=ui.sheet,b=document.querySelector("#sheet .body"),h='<div class="grab"></div>',l=L(),st=S();
+  if(s.type==="note")h+='<h1 style="font-size:22px">Note to self</h1><p class="s15 dim">Shown when the stack hits zero and when you go to log a slip. Write it for the 2am version of you.</p><textarea id="sh-note" maxlength="240">'+esc(st.note)+'</textarea><button class="btn press" data-a="saveNote">Save</button>';
+  else if(s.type==="exact")h+='<h1 style="font-size:22px">Table stack</h1><input class="hero" id="sh-exact" type="number" inputmode="decimal" min="0" step="any" value="'+l.table+'" aria-label="Exact table stack"><button class="btn press" data-a="saveExact">Set</button>';
+  else if(s.type==="slip")h+='<h1 style="font-size:22px">Before you do</h1><div class="panel"><span class="s13 dim">Note to self</span><span class="s17" style="line-height:1.4">'+esc(st.note)+'</span></div><button class="btn press" data-a="closeSheet">Never mind</button><button class="btn soft press" style="background:var(--bg)" data-a="rebuy">I rebought '+money(l.buyIn)+'</button><button class="btn soft press" style="background:var(--bg)" data-a="betUp">I changed my bet to '+money(l.bet*2)+'</button><p class="s13 dim" style="text-align:center">Slips are logged so the record stays honest.</p>';
+  else if(s.type==="end"){h+='<h1 style="font-size:22px">End session</h1><label class="f">You\'re leaving with<input class="hero" id="sh-cash" type="number" inputmode="decimal" min="0" step="any" value="'+s.cash+'"></label><p class="s15 dim" style="text-align:center;margin:-8px 0 0">Table chips plus pocket chips. <b id="sh-res" style="color:var(--text)"></b></p>'
+    +'<div class="col" style="gap:8px"><span class="s13 dim">Why are you leaving?</span><div style="display:flex;flex-wrap:wrap;gap:8px">'+EXIT.map(function(e){return '<button class="btn sm press" style="background:'+(s.reason===e?"var(--text)":"var(--bg)")+';color:'+(s.reason===e?"var(--bg)":"var(--text)")+'" data-a="endReason" data-v="'+e+'">'+e+'</button>';}).join("")+'</div></div>'
+    +'<div class="col" style="gap:8px"><span class="s13 dim">How do you feel?</span>'+seg("endMood",[[1,"Rough"],[2,"Fine"],[3,"Good"]],s.mood,"tall on-panel")+'</div>'
+    +'<button class="btn press" data-a="finish"'+(s.reason?"":" disabled")+'>Save session</button><button class="txt press" data-a="closeSheet">Back to the table</button>';}
+  else if(s.type==="quick"){var e=s.s;h+='<h1 style="font-size:22px">'+(e.id?"Edit session":"Add a session")+'</h1>'
+    +seg("qSign",[["-1","Lost"],["1","Won"]],e.sign,"tall on-panel")+'<input class="hero" id="q-amt" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="'+esc(e.amt)+'" aria-label="Amount">'
+    +'<div class="grid2"><label class="f">Date<input id="q-date" type="date" value="'+esc(e.date)+'"></label><label class="f">Minutes played<input id="q-min" type="number" inputmode="numeric" min="0" value="'+esc(e.minutes)+'"></label><label class="f">Bet per hand<input id="q-bet" type="number" inputmode="decimal" min="0" step="any" value="'+esc(e.bet)+'"></label><label class="f">Buy-ins used<input id="q-buys" type="number" inputmode="numeric" min="1" value="'+esc(e.buys)+'"></label></div>'
+    +'<div class="col" style="gap:8px"><span class="s13 dim">Table</span>'+seg("qTable",[["solo","Just me"],["few","2–3"],["full","4+"],["mixed","Mixed"]],e.table,"tall on-panel")+'</div>'
+    +'<button class="btn press" data-a="saveQuick">Save</button>'+(e.id?(s.confirm?'<button class="btn press" style="background:var(--bad)" data-a="delYes">Delete for good</button>':'<button class="txt press" data-a="delAsk">Delete this session</button>'):"");}
+  else if(s.type==="settings")h+='<h1 style="font-size:22px">Settings</h1><div class="rows"><div class="rowi"><span>Currency</span>'+seg("cur",[["$","$"],["£","£"],["€","€"]],st.cur)+'</div>'
+    +'<div class="rowi"><span>Monthly budget</span><div class="step"><button class="press" data-a="setStep" data-k="budget" data-d="-1" aria-label="Less">−</button><b>'+(st.budget?money(st.budget):"Off")+'</b><button class="press" data-a="setStep" data-k="budget" data-d="1" aria-label="More">+</button></div></div>'
+    +'<div class="rowi"><span>Cool-off between sessions</span>'+seg("cool",[[0,"Off"],[12,"12h"],[24,"24h"],[48,"48h"]],st.cooloffH)+'</div></div>'
+    +'<button class="btn soft press" style="background:var(--bg)" data-a="backup">'+(s.copied?"Copied to clipboard":"Copy a backup of my data")+'</button>'
+    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button>';
+  b.innerHTML=h;placeThumbs(b);endRes();}
+function endRes(){var el=document.getElementById("sh-res"),l=L();if(!el||!l)return;var n=num(document.getElementById("sh-cash").value,0)-l.buyIn-rebuys(l);el.textContent=(n===0?"Break even":money(n,true))+" on the night";}
+document.addEventListener("input",function(ev){if(ev.target.id==="sh-cash")endRes();});
+
+/* ================= actions ================= */
+function startSession(){var st=S(),b=blocks();state.live={startAt:Date.now(),buyIn:st.buyIn,bet:st.bet,bet0:st.bet,lockAt:st.lockAt,playOn:st.keep,table:st.buyIn,pocket:0,rebuys:[],size:ui.pre.size,segs:[{size:ui.pre.size,at:0}],pausedAt:null,pausedMs:0,lastCheck:0,moodBefore:+ui.pre.mood,checks:[],gate:b.length?false:true,everDue:false,missed:false};
+  ui.flow="live";save();render();}
+function finish(){var l=L(),s=ui.sheet,cash=num(document.getElementById("sh-cash").value,l.table+l.pocket),now=Date.now(),rb=rebuys(l);
+  var rules={one:l.rebuys.length===0,bet:l.bet===l.bet0,pocket:l.missed||l.table>=trig(l)?false:(l.everDue?true:null),gate:l.gate};
+  var kept=rules.one&&rules.bet&&rules.pocket!==false&&rules.gate!==false,sizes={};l.segs.forEach(function(x){sizes[x.size]=1;});
+  var id="s"+now;state.sessions.push({id:id,ts:now,date:iso(l.startAt),startAt:l.startAt,endAt:now,minutes:Math.round(playMs(l)/60000),hands:liveHands(l),bet:l.bet0,buyIn:l.buyIn+rb,rebuys:l.rebuys.length,cashOut:cash,net:Math.round((cash-l.buyIn-rb)*100)/100,
+    table:Object.keys(sizes).length>1?"mixed":l.size,reason:s.reason,moodBefore:l.moodBefore,moodAfter:+s.mood,pocketed:l.pocket,rules:rules,kept:kept,checks:l.checks});
+  state.live=null;ui.flow="review";ui.reviewId=id;save();closeSheet();render();}
+var ACT={
+  tab:function(b){ui.tab=b.dataset.v;ui.flow=null;},home:function(){ui.flow=null;},plan:function(){ui.flow="plan";},resume:function(){ui.flow="live";},
+  open:function(b){ui.flow="review";ui.reviewId=b.dataset.id;},
+  step:function(b){var st=S(),k=b.dataset.k,d=+b.dataset.d;
+    if(k==="buyIn"){st.buyIn=Math.max(20,st.buyIn+d*20);st.lockAt=st.buyIn*2;st.keep=st.buyIn;if(st.bet>st.buyIn/4)st.bet=5;}
+    else if(k==="keep")st.keep=Math.max(st.bet*4,Math.min(st.lockAt-st.bet,st.keep+d*st.buyIn/4));
+    else if(k==="bet"){var o=[5,10,15,20,25,50],i=Math.max(0,Math.min(o.length-1,o.indexOf(st.bet)+d));st.bet=o[i<0?0:i];}
+    else if(k==="lockAt"){st.lockAt=Math.max(st.buyIn*1.5,st.lockAt+d*st.buyIn/4);if(st.keep>=st.lockAt)st.keep=st.lockAt-st.buyIn/4;}
+    else if(k==="checkinMin")st.checkinMin=Math.max(30,Math.min(120,st.checkinMin+d*30));
+    save();},
+  preSize:function(b){ui.pre.size=b.dataset.v;},preMood:function(b){ui.pre.mood=+b.dataset.v;},
+  range:function(b){ui.range=b.dataset.v;},by:function(b){ui.by=b.dataset.v;},
+  note:function(){openSheet("note");return 1;},settings:function(){openSheet("settings");return 1;},
+  saveNote:function(){var t=document.getElementById("sh-note").value.trim();if(t)S().note=t;save();closeSheet();},
+  closeSheet:function(){closeSheet();return 1;},
+  /* live */
+  adj:function(b){var l=L();if(l.pausedAt)return 1;var was=l.table>=trig(l);l.table=Math.max(0,Math.round((l.table+l.bet*(+b.dataset.d))*100)/100);var now=l.table>=trig(l);if(now)l.everDue=true;if(was&&!now)l.missed=true;save();updateLive();return 1;},
+  pocket:function(){var l=L(),take=l.table-l.playOn;if(take>0){l.pocket+=take;l.table=l.playOn;l.everDue=true;}save();updateLive();return 1;},
+  size:function(b){var l=L();if(l.size!==b.dataset.v){l.size=b.dataset.v;l.segs.push({size:l.size,at:playMs(l)});save();}b.parentNode.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b);});placeThumbs();tick();return 1;},
+  pause:function(){var l=L();if(l.pausedAt){l.pausedMs+=Date.now()-l.pausedAt;l.pausedAt=null;}else l.pausedAt=Date.now();save();updateLive();return 1;},
+  check:function(b){var l=L();l.lastCheck=playMs(l);l.checks.push(b.dataset.v);save();updateLive();if(b.dataset.v!=="ok")ACT.end(null,b.dataset.v==="tired"?"Tired":"Chasing");return 1;},
+  exact:function(){openSheet("exact");return 1;},
+  saveExact:function(){var l=L(),was=l.table>=trig(l);l.table=Math.max(0,num(document.getElementById("sh-exact").value,l.table));var now=l.table>=trig(l);if(now)l.everDue=true;if(was&&!now)l.missed=true;save();closeSheet();updateLive();return 1;},
+  slip:function(){openSheet("slip");return 1;},
+  rebuy:function(){var l=L();l.rebuys.push(l.buyIn);l.table+=l.buyIn;save();closeSheet();updateLive();return 1;},
+  betUp:function(){var l=L();l.bet=l.bet*2;save();closeSheet();render();return 1;},
+  end:function(b,why){var l=L();openSheet("end",{cash:Math.round((l.table+l.pocket)*100)/100,reason:why||(l.table<=0?"Stack gone":""),mood:2});return 1;},
+  endReason:function(b){ui.sheet.cash=document.getElementById("sh-cash").value;ui.sheet.reason=b.dataset.v;drawSheet();return 1;},
+  endMood:function(b){ui.sheet.cash=document.getElementById("sh-cash").value;ui.sheet.mood=+b.dataset.v;drawSheet();return 1;},
+  finish:function(){finish();return 1;},
+  /* history */
+  quick:function(){openSheet("quick",{s:{id:null,sign:"-1",amt:"",date:iso(Date.now()),minutes:"",bet:S().bet,buys:1,table:"few"}});return 1;},
+  editSession:function(b){var s=state.sessions.filter(function(x){return x.id===b.dataset.id;})[0];if(!s)return 1;openSheet("quick",{s:{id:s.id,sign:s.net>0?"1":"-1",amt:Math.abs(s.net),date:s.date||"",minutes:s.minutes||"",bet:s.bet||"",buys:(s.rebuys||0)+1,table:s.table||""}});return 1;},
+  qSign:function(b){readQuick();ui.sheet.s.sign=b.dataset.v;drawSheet();return 1;},qTable:function(b){readQuick();ui.sheet.s.table=b.dataset.v;drawSheet();return 1;},
+  saveQuick:function(){readQuick();var e=ui.sheet.s,amt=num(e.amt,null);if(amt===null)return 1;
+    var old=e.id?state.sessions.filter(function(x){return x.id===e.id;})[0]:null,o=old||{id:"s"+Date.now(),ts:Date.now(),kept:null};
+    var net=Math.abs(amt)*(+e.sign),buys=Math.max(1,num(e.buys,1));
+    o.net=net;o.date=e.date||null;o.minutes=num(e.minutes,0)||null;o.bet=num(e.bet,0)||null;o.table=e.table||null;
+    if(!old){if(o.date)o.ts=pd(o.date).getTime();o.endAt=o.ts;o.rebuys=buys-1;o.rules={one:buys===1,bet:true,pocket:null,gate:true};o.kept=buys===1;}
+    if(old&&(old.legacy||!old.startAt)){if(o.minutes)delete o.hands;}
+    if(!old)state.sessions.push(o);save();closeSheet();},
+  delAsk:function(){readQuick();ui.sheet.confirm=true;drawSheet();return 1;},
+  delYes:function(){var id=ui.sheet.s.id;state.sessions=state.sessions.filter(function(x){return x.id!==id;});ui.flow=null;save();closeSheet();},
+  /* settings */
+  cur:function(b){S().cur=b.dataset.v;save();drawSheet();},cool:function(b){S().cooloffH=+b.dataset.v;save();drawSheet();},
+  setStep:function(b){S().budget=Math.max(0,S().budget+(+b.dataset.d)*50);save();drawSheet();},
+  backup:function(){var t=JSON.stringify(state);try{navigator.clipboard.writeText(t).then(function(){ui.sheet.copied=true;drawSheet();},function(){});}catch(e){}return 1;},
+  restore:function(){try{var s=JSON.parse(document.getElementById("sh-restore").value);if(!s||!s.sessions)throw 0;state=normalize(s);save();closeSheet();}catch(e){ui.sheet.msg="That isn't a valid backup";drawSheet();return 1;}}
+};
+function readQuick(){var e=ui.sheet.s;e.amt=document.getElementById("q-amt").value;e.date=document.getElementById("q-date").value;e.minutes=document.getElementById("q-min").value;e.bet=document.getElementById("q-bet").value;e.buys=document.getElementById("q-buys").value;}
+document.addEventListener("click",function(ev){var b=ev.target.closest("[data-a]");if(!b||b.disabled)return;var f=ACT[b.dataset.a];if(!f)return;var skip=f(b);if(!skip)render();});
+/* hold to commit */
+var holdT=null;
+function holdEnd(ev){if(ev&&ev.type==="pointerleave"&&!(ev.target.matches&&ev.target.matches("[data-hold]")))return;clearTimeout(holdT);holdT=null;var h=document.querySelector(".hold.holding");if(h)h.classList.remove("holding");}
+document.addEventListener("pointerdown",function(ev){var h=ev.target.closest&&ev.target.closest("[data-hold]");if(!h)return;h.classList.add("holding");holdT=setTimeout(function(){holdT=null;startSession();},900);});
+["pointerup","pointercancel","pointerleave"].forEach(function(n){document.addEventListener(n,holdEnd,true);});
+document.addEventListener("keydown",function(ev){if((ev.key==="Enter"||ev.key===" ")&&ev.target.closest&&ev.target.closest("[data-hold]")){ev.preventDefault();startSession();}});
+/* chart scrub */
+var scrubbing=false;
+document.addEventListener("pointerdown",function(ev){if(ev.target.closest&&ev.target.closest(".chart")){scrubbing=true;scrub(ev);}});
+document.addEventListener("pointermove",function(ev){if(scrubbing)scrub(ev);});
+["pointerup","pointercancel"].forEach(function(n){document.addEventListener(n,function(){scrubbing=false;});});
+window.addEventListener("resize",function(){placeThumbs();});
+document.addEventListener("visibilitychange",function(){if(!document.hidden)tick();});
+
+loadLocal();if(state.live)ui.flow="live";render();connect();
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!(window.claude&&window.claude.use)){navigator.serviceWorker.register("sw.js").catch(function(){});}
+if(navigator.storage&&navigator.storage.persist){try{navigator.storage.persist();}catch(e){}}
+if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){try{window.claude.hot.snapshot(function(){return {tab:ui.tab};});}catch(e){}}
+})();
+</script>
+</body>
+</html>
