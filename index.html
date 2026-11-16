@@ -453,7 +453,7 @@ function drawSheet(){var s=ui.sheet,b=document.querySelector("#sheet .body"),h='
     +'<div class="rowi"><span>Monthly budget</span><div class="step"><button class="press" data-a="setStep" data-k="budget" data-d="-1" aria-label="Less">−</button><b>'+(st.budget?money(st.budget):"Off")+'</b><button class="press" data-a="setStep" data-k="budget" data-d="1" aria-label="More">+</button></div></div>'
     +'<div class="rowi"><span>Cool-off between sessions</span>'+seg("cool",[[0,"Off"],[12,"12h"],[24,"24h"],[48,"48h"]],st.cooloffH)+'</div></div>'
     +'<button class="btn soft press" style="background:var(--bg)" data-a="backup">'+(s.copied?"Copied to clipboard":"Copy a backup of my data")+'</button>'
-    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 4</p>';
+    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 5<br>'+diag()+'</p>';
   b.innerHTML=h;placeThumbs(b);endRes();}
 function endRes(){var el=document.getElementById("sh-res"),l=L();if(!el||!l)return;var n=num(document.getElementById("sh-cash").value,0)-l.buyIn-rebuys(l);el.textContent=(n===0?"Break even":money(n,true))+" on the night";}
 document.addEventListener("input",function(ev){if(ev.target.id==="sh-cash")endRes();});
@@ -534,6 +534,9 @@ window.addEventListener("resize",function(){placeThumbs();});
 document.addEventListener("visibilitychange",function(){if(!document.hidden)tick();});
 
 /* iPhone home-screen mode reports a shorter screen than it draws; size to the real screen there */
+function diag(){var t=document.createElement("div");t.style.cssText="position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);visibility:hidden";document.body.appendChild(t);
+  var cs=getComputedStyle(t),it=parseInt(cs.paddingTop),ib=parseInt(cs.paddingBottom);t.remove();var a=document.getElementById("app").getBoundingClientRect();
+  return "Screen "+screen.height+" · window "+window.innerHeight+" · page "+document.documentElement.clientHeight+" · app "+Math.round(a.top)+"–"+Math.round(a.bottom)+" · insets "+it+"/"+ib+" · "+(window.navigator.standalone?"home screen":"browser");}
 function fit(){var a=document.getElementById("app");if(window.navigator.standalone){var h=Math.max(screen.height,screen.width)===screen.height?screen.height:screen.width;
   if(window.matchMedia("(orientation: landscape)").matches)h=Math.min(screen.height,screen.width);a.style.height=h+"px";}}
 fit();window.addEventListener("resize",fit);window.addEventListener("orientationchange",function(){setTimeout(fit,300);});
