@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0B">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Blackjack">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -55,10 +55,10 @@ html[data-look="claret"]{
   --g1:#45222C; --g2:#63323F; --g3:#8A5562; --sheet:#241017;
   --num:"Fraunces",Georgia,serif; --numw:600; --numls:-.02em;
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;overscroll-behavior:none}
 body{-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
-#app{position:fixed;top:0;left:0;right:0;height:100vh;height:100lvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
+#app{position:fixed;top:0;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
 /* covers the status bar so scrolled content never runs under the clock */
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;pointer-events:none}
 .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 22px) 20px 28px;display:flex;flex-direction:column;gap:14px}
@@ -472,7 +472,7 @@ function drawSheet(){var s=ui.sheet,b=document.querySelector("#sheet .body"),h='
     +'<div class="rowi"><span>Monthly budget</span><div class="step"><button class="press" data-a="setStep" data-k="budget" data-d="-1" aria-label="Less">−</button><b>'+(st.budget?money(st.budget):"Off")+'</b><button class="press" data-a="setStep" data-k="budget" data-d="1" aria-label="More">+</button></div></div>'
     +'<div class="rowi"><span>Cool-off between sessions</span>'+seg("cool",[[0,"Off"],[12,"12h"],[24,"24h"],[48,"48h"]],st.cooloffH)+'</div></div>'
     +'<button class="btn soft press" style="background:var(--bg)" data-a="backup">'+(s.copied?"Copied to clipboard":"Copy a backup of my data")+'</button>'
-    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 8<br>'+diag()+'</p>';
+    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 9<br>'+diag()+'</p>';
   b.innerHTML=h;placeThumbs(b);endRes();}
 function endRes(){var el=document.getElementById("sh-res"),l=L();if(!el||!l)return;var n=num(document.getElementById("sh-cash").value,0)-l.buyIn-rebuys(l);el.textContent=(n===0?"Break even":money(n,true))+" on the night";}
 document.addEventListener("input",function(ev){if(ev.target.id==="sh-cash")endRes();});
@@ -557,13 +557,9 @@ function diag(){var t=document.createElement("div");t.style.cssText="position:fi
   var cs=getComputedStyle(t),it=parseInt(cs.paddingTop),ib=parseInt(cs.paddingBottom);t.remove();var a=document.getElementById("app").getBoundingClientRect();
   return "Screen "+screen.height+" · window "+window.innerHeight+" · page "+document.documentElement.clientHeight+" · app "+Math.round(a.top)+"–"+Math.round(a.bottom)+" · insets "+it+"/"+ib+" · "+(window.navigator.standalone?"home screen":"browser");}
 function safeTop(){var t=document.createElement("div");t.style.cssText="position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);visibility:hidden";document.body.appendChild(t);var v=parseInt(getComputedStyle(t).paddingTop)||0;t.remove();return v;}
-function fit(){var a=document.getElementById("app"),land=window.matchMedia("(orientation: landscape)").matches,
-  full=land?Math.min(screen.height,screen.width):Math.max(screen.height,screen.width),
-  home=window.navigator.standalone||window.matchMedia("(display-mode: standalone)").matches||window.matchMedia("(display-mode: fullscreen)").matches,
-  st=safeTop(),short=st>0&&Math.abs(window.innerHeight+st-full)<=3;
-  /* iPhone home-screen mode can report the screen minus the status bar; size to the whole screen there */
-  if(home||short)a.style.height=full+"px";else a.style.height="";}
-fit();window.addEventListener("resize",fit);window.addEventListener("orientationchange",function(){setTimeout(fit,300);});
+/* never zoom: block double-tap and pinch */
+document.addEventListener("gesturestart",function(e){e.preventDefault();});
+document.addEventListener("dblclick",function(e){e.preventDefault();},{passive:false});
 loadLocal();if(state.live)ui.flow="live";render();connect();
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!(window.claude&&window.claude.use)){navigator.serviceWorker.register("sw.js").catch(function(){});}
 if(navigator.storage&&navigator.storage.persist){try{navigator.storage.persist();}catch(e){}}
