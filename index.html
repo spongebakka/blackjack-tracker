@@ -58,7 +58,7 @@ html[data-look="claret"]{
 *{box-sizing:border-box;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.35;font-variant-numeric:tabular-nums;overscroll-behavior:none}
 body{-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
-#app{position:fixed;top:0;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
+#app{position:relative;height:100%;max-width:480px;margin:0 auto;display:flex;flex-direction:column}
 /* covers the status bar so scrolled content never runs under the clock */
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;pointer-events:none}
 .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 22px) 20px 28px;display:flex;flex-direction:column;gap:14px}
@@ -104,6 +104,7 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cu
 .step{display:flex;align-items:center;gap:12px}
 .step b{min-width:64px;text-align:right;font-weight:600;font-size:17px}
 .step button{width:34px;height:34px;border-radius:17px;background:var(--raised);font-size:20px;line-height:1;display:grid;place-items:center}
+.shortview .tabbar{padding-bottom:10px}
 .tabbar{display:flex;justify-content:space-around;padding:8px 0 calc(env(safe-area-inset-bottom,0px) + 10px);border-top:1px solid var(--line);background:var(--bg);flex:none}
 .tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--dim);width:84px;height:46px;justify-content:center}
 .tabbar button[aria-current="page"]{color:var(--text)}
@@ -132,7 +133,7 @@ button{font:inherit;color:inherit;border:0;background:none;padding:0;margin:0;cu
 .bigbtn{flex:1;height:68px;border-radius:20px;background:var(--panel);font-size:22px;font-weight:600}
 .paused .live-num,.paused .bigbtn{opacity:.35}
 /* sheets */
-#sheet{position:fixed;inset:0;z-index:10;pointer-events:none}
+#sheet{position:fixed;top:0;left:0;right:0;height:var(--appH,100%);z-index:10;pointer-events:none}
 #sheet .back{position:absolute;inset:0;background:rgba(0,0,0,.6);opacity:0;transition:opacity .3s}
 #sheet .body{position:absolute;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;max-height:92%;overflow-y:auto;background:var(--sheet);border-radius:28px 28px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;gap:14px;transform:translateY(102%);transition:transform .42s var(--ease)}
 #sheet.open{pointer-events:auto} #sheet.open .back{opacity:1} #sheet.open .body{transform:none}
@@ -472,7 +473,7 @@ function drawSheet(){var s=ui.sheet,b=document.querySelector("#sheet .body"),h='
     +'<div class="rowi"><span>Monthly budget</span><div class="step"><button class="press" data-a="setStep" data-k="budget" data-d="-1" aria-label="Less">−</button><b>'+(st.budget?money(st.budget):"Off")+'</b><button class="press" data-a="setStep" data-k="budget" data-d="1" aria-label="More">+</button></div></div>'
     +'<div class="rowi"><span>Cool-off between sessions</span>'+seg("cool",[[0,"Off"],[12,"12h"],[24,"24h"],[48,"48h"]],st.cooloffH)+'</div></div>'
     +'<button class="btn soft press" style="background:var(--bg)" data-a="backup">'+(s.copied?"Copied to clipboard":"Copy a backup of my data")+'</button>'
-    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 9<br>'+diag()+'</p>';
+    +'<label class="f">Restore from a backup<textarea id="sh-restore" placeholder="Paste a backup here" style="min-height:60px"></textarea></label><button class="btn soft press" style="background:var(--bg)" data-a="restore">'+(s.msg||"Restore")+'</button><button class="btn press" data-a="closeSheet">Done</button><p class="s13 dim" style="text-align:center">Version 10<br>'+diag()+'</p>';
   b.innerHTML=h;placeThumbs(b);endRes();}
 function endRes(){var el=document.getElementById("sh-res"),l=L();if(!el||!l)return;var n=num(document.getElementById("sh-cash").value,0)-l.buyIn-rebuys(l);el.textContent=(n===0?"Break even":money(n,true))+" on the night";}
 document.addEventListener("input",function(ev){if(ev.target.id==="sh-cash")endRes();});
@@ -557,6 +558,16 @@ function diag(){var t=document.createElement("div");t.style.cssText="position:fi
   var cs=getComputedStyle(t),it=parseInt(cs.paddingTop),ib=parseInt(cs.paddingBottom);t.remove();var a=document.getElementById("app").getBoundingClientRect();
   return "Screen "+screen.height+" · window "+window.innerHeight+" · page "+document.documentElement.clientHeight+" · app "+Math.round(a.top)+"–"+Math.round(a.bottom)+" · insets "+it+"/"+ib+" · "+(window.navigator.standalone?"home screen":"browser");}
 function safeTop(){var t=document.createElement("div");t.style.cssText="position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top);visibility:hidden";document.body.appendChild(t);var v=parseInt(getComputedStyle(t).paddingTop)||0;t.remove();return v;}
+/* Size the app to the part of the screen iPhone actually shows. In home-screen mode iOS can report a
+   taller page than it paints, which cut off the bottom; take the smallest of the reported heights. */
+function fit(){var a=document.getElementById("app"),de=document.documentElement,
+  h=Math.min(de.clientHeight||9999,window.innerHeight||9999,window.visualViewport?window.visualViewport.height:9999);
+  if(h&&h<9999){a.style.height=h+"px";de.style.setProperty("--appH",h+"px");}
+  var gap=Math.max(screen.height,screen.width)-h,st=0;try{var t=document.createElement("div");t.style.cssText="position:fixed;top:0;padding-top:env(safe-area-inset-top);visibility:hidden";document.body.appendChild(t);st=parseInt(getComputedStyle(t).paddingTop)||0;t.remove();}catch(e){}
+  /* when the bottom strip is not drawn, the home bar sits in it, so drop the extra home-bar padding */
+  de.classList.toggle("shortview",!window.matchMedia("(orientation: landscape)").matches&&st>0&&gap>=st-2);}
+fit();window.addEventListener("resize",fit);if(window.visualViewport)window.visualViewport.addEventListener("resize",fit);
+window.addEventListener("orientationchange",function(){setTimeout(fit,300);});window.addEventListener("pageshow",fit);
 /* never zoom: block double-tap and pinch */
 document.addEventListener("gesturestart",function(e){e.preventDefault();});
 document.addEventListener("dblclick",function(e){e.preventDefault();},{passive:false});
